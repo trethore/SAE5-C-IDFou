@@ -3,7 +3,7 @@
 from dash import Dash, dash_table, dcc, html, Input, Output, callback
 import pandas as pd
 
-df = pd.read_csv('C:\\Users\\lilia\\OneDrive\\Documents\\cours\\R5.C.08\\Analyse\\output.csv')
+df = pd.read_csv('data\echonest.csv')
 df = df.fillna("N/A")
 
 app = Dash()

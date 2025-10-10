@@ -215,3 +215,7 @@ CLAUDE.md
 # Other
 data/*.csv
 notes.md
+
+# Out
+
+out/

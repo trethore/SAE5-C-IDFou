@@ -1,34 +1,34 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from datetime import datetime
 from typing import Any
 
 HERE = Path(__file__).parent
-CSV = "tracks.csv"
-CSV_PATH = (HERE / "../../data" / CSV).resolve()
+OUTPUT_DIR = HERE / "out"
+CSV_FILENAME = "tracks.csv"
+CSV_PATH = (HERE / "../../data" / CSV_FILENAME).resolve()
 
-print("Loading track data from:", CSV_PATH)
-
-globalRuleDict = {CSV: {
-    "track_id": ["notNull", "notNegative", "int"],
-    "track_title": ["notNull", "string"],
-    "track_duration": ["notNull", "notNegative", "float"],
-    "track_genre_top": ["string"],
-    "track_genres": ["string", "array"],
-    "track_tags": ["string", "array"],
-    "track_listens": ["notNull", "notNegative", "int"],
-    "track_favorites": ["notNull", "notNegative", "int"],
-    "track_interest": ["notNull", "notNegative", "float"],
-    "track_comments": ["notNull", "notNegative", "int"],
-    "track_date_created": ["notNull", "beforeNow", "date"],
-    "track_date_recorded": ["notNull", "validRecordDate", "date"],
-    "track_composer": ["string"],
-    "track_lyricist": ["string"],
-    "track_publisher": ["string"],
-    "album_id": ["notNull", "notNegative", "int"],
-    "artist_id": ["notNull", "notNegative", "int"]
-}}
+RULES_BY_CSV = {
+    CSV_FILENAME: {
+        "track_id": ["notNull", "notNegative", "int"],
+        "track_title": ["notNull", "string"],
+        "track_duration": ["notNull", "notNegative", "float"],
+        "track_genre_top": ["string"],
+        "track_genres": ["string", "array"],
+        "track_tags": ["string", "array"],
+        "track_listens": ["notNull", "notNegative", "int"],
+        "track_favorites": ["notNull", "notNegative", "int"],
+        "track_interest": ["notNull", "notNegative", "float"],
+        "track_comments": ["notNull", "notNegative", "int"],
+        "track_date_created": ["notNull", "beforeNow", "date"],
+        "track_date_recorded": ["notNull", "validRecordDate", "date"],
+        "track_composer": ["string"],
+        "track_lyricist": ["string"],
+        "track_publisher": ["string"],
+        "album_id": ["notNull", "notNegative", "int"],
+        "artist_id": ["notNull", "notNegative", "int"]
+    }
+}
 
 
 def convert_to_int(value: Any) -> Any:
@@ -156,8 +156,8 @@ def respect_rule(value: Any, rule: str, row: pd.Series = None) -> bool:
         return True
 
 
-def is_value_valid(value: Any, global_rules: list, row: pd.Series = None) -> bool:
-    for rule in global_rules:
+def is_value_valid(value: Any, rules: list, row: pd.Series = None) -> bool:
+    for rule in rules:
         if not respect_rule(value, rule, row):
             return False
     return True
@@ -177,41 +177,52 @@ def convert_value(value: Any, rules: list) -> Any:
     return value
 
 
-def clean_csv(csv_path: str, global_rules: dict) -> None:
-    csv_name = Path(csv_path).name
+def clean_csv(csv_path: str, rules_by_csv: dict) -> None:
+    csv_filename = Path(csv_path).name
     
-    if csv_name not in global_rules:
-        print(f"No rules found for {csv_name}")
+    if csv_filename not in rules_by_csv:
+        print(f"No rules found for {csv_filename}")
         return
     
-    df = pd.read_csv(csv_path)
-    rules = global_rules[csv_name]
+    dataframe = pd.read_csv(csv_path, header=[0, 1])
+    dataframe.columns = ['_'.join(col).strip('_') for col in dataframe.columns.values]
+    dataframe = dataframe.rename(columns=lambda x: x.replace('Unnamed: 0_', ''))
     
-    df = df[[col for col in df.columns if col in rules]]
+    if 'level_0_level_1' in dataframe.columns:
+        first_cell_value = dataframe.iloc[0, 0]
+        if first_cell_value == 'track_id':
+            dataframe = dataframe.rename(columns={'level_0_level_1': 'track_id'})
+            dataframe = dataframe[1:]
     
-    for col in df.columns:
-        if col in rules:
-            df[col] = df[col].apply(lambda x: convert_value(x, rules[col]))
+    column_rules = rules_by_csv[csv_filename]
     
-    valid_rows = []
-    for idx, row in df.iterrows():
-        is_valid = True
-        for col in df.columns:
-            if col in rules:
-                if not is_value_valid(row[col], rules[col], row):
-                    is_valid = False
+    dataframe = dataframe[[col for col in dataframe.columns if col in column_rules]]
+    
+    for column in dataframe.columns:
+        if column in column_rules:
+            dataframe[column] = dataframe[column].apply(lambda x: convert_value(x, column_rules[column]))
+    
+    valid_row_indices = []
+    for row_index, row in dataframe.iterrows():
+        row_is_valid = True
+        for column in dataframe.columns:
+            if column in column_rules:
+                if not is_value_valid(row[column], column_rules[column], row):
+                    row_is_valid = False
                     break
-        if is_valid:
-            valid_rows.append(idx)
+        if row_is_valid:
+            valid_row_indices.append(row_index)
     
-    df_clean = df.loc[valid_rows]
+    cleaned_dataframe = dataframe.loc[valid_row_indices]
     
-    output_path = HERE / f"clean_{csv_name}"
-    df_clean.to_csv(output_path, index=False)
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    output_path = OUTPUT_DIR / f"clean_{csv_filename}"
+    cleaned_dataframe.to_csv(output_path, index=False)
     print(f"Cleaned CSV saved to: {output_path}")
-    print(f"Rows: {len(df)} -> {len(df_clean)} (removed {len(df) - len(df_clean)})")
+    print(f"Rows: {len(dataframe)} -> {len(cleaned_dataframe)} (removed {len(dataframe) - len(cleaned_dataframe)})")
 
 
 if __name__ == "__main__":
-    clean_csv(CSV_PATH, globalRuleDict)
+    print(f"Loading track data from: {CSV_PATH}")
+    clean_csv(CSV_PATH, RULES_BY_CSV)
 

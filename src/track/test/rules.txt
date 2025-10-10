@@ -1,0 +1,47 @@
+// Type
+
+int: la valeur doit être un integer
+float: la valeur doit être un float
+string: la valeur doit être un String
+date: la valeur doit être un Date au format AAAA-MM-DD
+boolean: la valeur doit être un boolean
+array: combiner avec un autre type pour préciser le type du contenu de l'array
+
+
+// qualité de donné
+
+notNull: La valeur ne peut pas être NULL
+notNegative: La valeur doit ne peut être < 0
+toLowerCase:  La valeur doit être un string et en lower case
+toUpperCase: La valeur doit être en uppercase
+beforeNow: La valeur doit être une date inférieure à now
+afterNow: La valeur doit être une date supérieur à now
+
+// Spécifique
+
+Sur Tracks et Raw_Tracks :
+
+validRecordDate: La valeur doit être une date < au champ "track_date_created" qui doit aussi être une date et < a now.
+
+
+Application des règles:
+
+Tracks:
+
+"track_id": notNull, notNegative, int
+"track_title": notNull, string
+"track_duration": notNull, notNegative, float
+"track_genre_top": string
+"track_genres": string, array
+"track_tags": string, array
+"track_listens": notNull, notNegative, int
+"track_favorites": notNull, notNegative, int
+"track_interest": notNull, notNegative, float
+"track_comments": notNull, notNegative, int
+"track_date_created": notNull, beforeNow, date
+"track_date_recorded": notNull, validRecordDate, date
+"track_composer": string
+"track_lyricist": string
+"track_publisher": string
+"album_id": notNull, notNegative, int
+"artist_id": notNull, notNegative, int

@@ -213,5 +213,5 @@ CLAUDE.md
 .claude/
 
 # Other
-
+data/*.csv
 notes.md

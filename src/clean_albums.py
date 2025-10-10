@@ -44,6 +44,7 @@ def main() -> None:
         print(
             "Error: raw_albums.csv not found. Make sure to run the script from the root of the repository."
         )
+        exit(1)
 
 
 if __name__ == "__main__":

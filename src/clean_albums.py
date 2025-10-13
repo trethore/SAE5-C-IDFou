@@ -3,10 +3,12 @@
 
 import pandas
 
+from rules_types import rules_dict
+
 
 RAW_ALBUMS_CSV_PATH: str = "data/raw_albums.csv"
 
-RAW_ALBUMS_RULES: dict[str, dict[str, list[str]]] = {
+RAW_ALBUMS_RULES: rules_dict = {
     "raw_albums": {
         "album_id": ["notNull", "unique", "int", "notNegative"],
         "album_title": ["notNull", "string"],

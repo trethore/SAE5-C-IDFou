@@ -113,39 +113,6 @@ def _to_datetime_utc(value: Any) -> pd.Timestamp | None:
     return None if pd.isna(timestamp) else timestamp
 
 
-def _parse_timecode(value: Any) -> tuple[int, int, int] | None:
-    if not isinstance(value, str):
-        return None
-
-    timecode = value.strip()
-    if not timecode:
-        return None
-
-    parts = timecode.split(":")
-    if len(parts) == 2:
-        minutes_str, seconds_str = parts
-        if not (minutes_str.isdigit() and seconds_str.isdigit()):
-            return None
-        minutes = int(minutes_str)
-        seconds = int(seconds_str)
-        if not 0 <= seconds < 60:
-            return None
-        return 0, minutes, seconds
-
-    elif len(parts) == 3:
-        hours_str, minutes_str, seconds_str = parts
-        if not (hours_str.isdigit() and minutes_str.isdigit() and seconds_str.isdigit()):
-            return None
-        hours = int(hours_str)
-        minutes = int(minutes_str)
-        seconds = int(seconds_str)
-        if not (0 <= minutes < 60 and 0 <= seconds < 60):
-            return None
-        return hours, minutes, seconds
-
-    return None
-
-
 def _now_utc() -> pd.Timestamp:
     return pd.Timestamp.now(tz="UTC")
 
@@ -201,6 +168,12 @@ def _r_is_float(value: Any, _: pd.Series | None = None) -> bool:
     return _to_float(value) is not None
 
 
+def _r_is_double(value: Any, _: pd.Series | None = None) -> bool:
+    if _is_nan(value):
+        return True
+    return _to_float(value) is not None
+
+
 def _r_is_string(value: Any, _: pd.Series | None = None) -> bool:
     return _is_nan(value) or isinstance(value, str)
 
@@ -219,12 +192,6 @@ def _r_is_array(value: Any, _: pd.Series | None = None) -> bool:
     return _is_nan(value) or isinstance(value, (list, tuple))
 
 
-def _r_is_timecode(value: Any, _: pd.Series | None = None) -> bool:
-    if _is_nan(value):
-        return True
-    return _parse_timecode(value) is not None
-
-
 VALIDATION_RULES: dict[str, ValidationRuleFn] = {
     "notNull": _r_not_null,
     "notNegative": _r_not_negative,
@@ -234,11 +201,11 @@ VALIDATION_RULES: dict[str, ValidationRuleFn] = {
     "afterNow": _r_after_now,
     "int": _r_is_int,
     "float": _r_is_float,
+    "double": _r_is_double,
     "string": _r_is_string,
     "date": _r_is_date,
     "boolean": _r_is_boolean,
     "array": _r_is_array,
-    "timecode": _r_is_timecode,
 }
 
 
@@ -252,6 +219,8 @@ def _respect_rule(value: Any, rule: str, row: pd.Series | None = None) -> bool:
 def _convert_value(value: Any, rules: list[str]) -> Any:
     if "int" in rules:
         return _convert_to_int(value)
+    if "double" in rules:
+        return _convert_to_float(value)
     if "float" in rules:
         return _convert_to_float(value)
     if "date" in rules:
@@ -336,7 +305,7 @@ def clean_csv(
             standardise = STANDARDISERS.get(rule_name)
             if standardise is None:
                 continue
-            dataframe.loc[:, column] = dataframe[column].apply(standardise)
+            dataframe[column] = dataframe[column].apply(standardise)
             applied_standardisations.setdefault(column, []).append(rule_name)
 
     if not selected_columns:
@@ -357,7 +326,21 @@ def clean_csv(
         dataframe.loc[:, column] = dataframe[column].apply(lambda value: _convert_value(value, rules))
 
     valid_indices, rule_failures = _validate_dataframe(dataframe, validation_rules)
-    cleaned_dataframe = dataframe.loc[valid_indices]
+    cleaned_dataframe = dataframe.loc[valid_indices].copy()
+
+    for column, rules in validation_rules.items():
+        if column not in cleaned_dataframe.columns:
+            continue
+        if "int" in rules:
+            cleaned_dataframe[column] = pd.to_numeric(
+                cleaned_dataframe[column], errors="coerce"
+            ).astype("Int64")
+        elif "float" in rules:
+            cleaned_dataframe[column] = pd.to_numeric(
+                cleaned_dataframe[column], errors="coerce"
+            )
+        elif "boolean" in rules:
+            cleaned_dataframe[column] = cleaned_dataframe[column].astype(bool)
 
     cleaned_row_count = len(cleaned_dataframe)
     removed_row_count = filtered_row_count - cleaned_row_count

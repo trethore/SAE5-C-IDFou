@@ -190,3 +190,25 @@ Les règles de validation décrivent les contraintes appliquées après standard
         }
     }
 ```
+
+
+### features.csv
+
+```json
+    "features.csv": {
+        "header_rows": [0, 1],
+        "skip_rows": [0, 1],
+        "rename_columns": {
+            "feature_statistics": "track_id"
+        },
+        "standardisation_rules": {
+            "track_id": ["toInt"],
+            "__all__": ["toFloat"]
+        },
+        "validation_rules": {
+            "track_id": ["notNull", "int"],
+            "__all__": ["notNull", "float"]
+        }
+    }
+```
+> Note: la clé spéciale `"__all__"` applique les règles à chaque colonne qui n'a pas de configuration dédiée.

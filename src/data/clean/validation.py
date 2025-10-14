@@ -334,8 +334,8 @@ def clean_csv(
     *,
     limit: int | None = None,
 ) -> CleanReport:
-    validation_rules: dict[str, list[str]] = config.get("validation_rules", {})
-    standardisation_rules: dict[str, list[str]] = config.get("standardisation_rules", {})
+    validation_rules_config: dict[str, list[str]] = config.get("validation_rules", {})
+    standardisation_rules_config: dict[str, list[str]] = config.get("standardisation_rules", {})
     csv_name = csv_path.name
 
     header_rows = cast(Sequence[int] | int | Literal["infer"] | None, config.get("header_rows"))
@@ -355,24 +355,53 @@ def clean_csv(
     if limit is not None and limit >= 0:
         dataframe = dataframe.iloc[:limit]
 
-    missing_columns = [col for col in validation_rules.keys() if col not in dataframe.columns]
+    default_validation_rules = validation_rules_config.get("__all__", [])
+    specific_validation_rules = {
+        column: rules for column, rules in validation_rules_config.items() if column != "__all__"
+    }
 
-    selected_columns = [col for col in dataframe.columns if col in validation_rules]
+    default_standardisers = standardisation_rules_config.get("__all__", [])
+    specific_standardisers = {
+        column: rules for column, rules in standardisation_rules_config.items() if column != "__all__"
+    }
+
+    missing_columns = [
+        col for col in specific_validation_rules.keys() if col not in dataframe.columns
+    ]
+
+    if default_validation_rules:
+        selected_columns = list(dataframe.columns)
+    else:
+        selected_columns = [col for col in dataframe.columns if col in specific_validation_rules]
+
+    effective_validation_rules: dict[str, list[str]] = {}
+    for column in selected_columns:
+        if column in specific_validation_rules:
+            effective_validation_rules[column] = specific_validation_rules[column]
+        elif default_validation_rules:
+            effective_validation_rules[column] = default_validation_rules
+
     dataframe = dataframe[selected_columns]
     filtered_row_count = len(dataframe)
 
     applied_standardisations: dict[str, list[str]] = {}
-    for column, standardisers in standardisation_rules.items():
-        if column not in dataframe.columns:
-            continue
-        for rule_name in standardisers:
+    effective_standardisers: dict[str, list[str]] = {}
+    for column in dataframe.columns:
+        if column in specific_standardisers:
+            effective_standardisers[column] = specific_standardisers[column]
+        elif default_standardisers:
+            effective_standardisers[column] = default_standardisers
+
+    for column, standardisers in effective_standardisers.items():
+        rule_sequence = list(standardisers)
+        for rule_name in rule_sequence:
             standardise = STANDARDISERS.get(rule_name)
             if standardise is None:
                 continue
             dataframe[column] = dataframe[column].apply(standardise)
             applied_standardisations.setdefault(column, []).append(rule_name)
 
-    if not selected_columns:
+    if not effective_validation_rules:
         return CleanReport(
             csv_name=csv_name,
             output_path=None,
@@ -385,14 +414,13 @@ def clean_csv(
             messages=["No columns matched the rule configuration; skipping export."],
         )
 
-    for column in selected_columns:
-        rules = validation_rules[column]
+    for column, rules in effective_validation_rules.items():
         dataframe.loc[:, column] = dataframe[column].apply(lambda value: _convert_value(value, rules))
 
-    valid_indices, rule_failures = _validate_dataframe(dataframe, validation_rules)
+    valid_indices, rule_failures = _validate_dataframe(dataframe, effective_validation_rules)
     cleaned_dataframe = dataframe.loc[valid_indices].copy()
 
-    for column, rules in validation_rules.items():
+    for column, rules in effective_validation_rules.items():
         if column not in cleaned_dataframe.columns:
             continue
         if "int" in rules:

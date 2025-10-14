@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TypedDict, Literal
+from typing import TypedDict, Literal, NotRequired
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -7,23 +7,39 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "out"
 
-type rule_name = Literal[
+type validation_rule_name = Literal[
     "notNull",
     "notNegative",
+    "toLowerCase",
+    "toUpperCase",
+    "beforeNow",
+    "afterNow",
     "int",
     "string",
     "float",
+    "boolean",
     "array",
-    "beforeNow",
     "date",
+    "timecode",
 ]
 
+type standardisation_rule_name = Literal[
+    "toLowerCase",
+    "toUpperCase",
+    "trimSpaces",
+    "parseDate",
+    "normalizeDuration",
+    "toArray",
+    "extract_genre_ids",
+    "normalize_tags",
+]
 
 class CsvConfig(TypedDict):
     header_rows: list[int]
     skip_rows: list[int]
     rename_columns: dict[str, str]
-    column_rules: dict[str, list[rule_name]]
+    validation_rules: dict[str, list[validation_rule_name]]
+    standardisation_rules: NotRequired[dict[str, list[standardisation_rule_name]]]
 
 type RulesByCsv = dict[str, CsvConfig]
 
@@ -35,7 +51,11 @@ RULES_BY_CSV: RulesByCsv = {
         "rename_columns": {
             "level_0_level_1": "track_id",
         },
-        "column_rules": {
+        "standardisation_rules": {
+            "track_genres": ["extract_genre_ids"],
+            "tags": ["normalize_tags"],
+        },
+        "validation_rules": {
             "track_id": ["notNull", "notNegative", "int"],
             "track_title": ["notNull", "string"],
             "track_duration": ["notNull", "notNegative", "float"],
@@ -52,6 +72,39 @@ RULES_BY_CSV: RulesByCsv = {
             "track_publisher": ["string"],
             "album_id": ["notNull", "notNegative", "int"],
             "artist_id": ["notNull", "notNegative", "int"],
+        },
+    },
+    "raw_tracks.csv": {
+        "header_rows": [0],
+        "skip_rows": [],
+        "rename_columns": {},
+        "standardisation_rules": {
+            "track_genres": ["extract_genre_ids"],
+            "tags": ["normalize_tags"],
+        },
+        "validation_rules": {
+            "track_id": ["notNull", "notNegative", "int"],
+            "album_id": ["notNull", "notNegative", "int"],
+            "artist_id": ["notNull", "notNegative", "int"],
+            "track_number": ["notNegative", "int"],
+            "track_disc_number": ["notNegative", "int"],
+            "track_favorites": ["notNull", "notNegative", "int"],
+            "track_listens": ["notNull", "notNegative", "int"],
+            "track_interest": ["notNull", "notNegative", "float"],
+            "track_comments": ["notNull", "notNegative", "int"],
+            "track_title": ["notNull", "string"],
+            "track_duration": ["notNull", "timecode"],
+            "track_bit_rate": ["notNegative", "int"],
+            "track_genres": ["array"],
+            "tags": ["array"],
+            "track_composer": ["string"],
+            "track_lyricist": ["string"],
+            "track_publisher": ["string"],
+            "track_explicit": ["boolean"],
+            "track_instrumental": ["boolean"],
+            "track_date_created": ["notNull", "beforeNow", "date"],
+            "album_title": ["string"],
+            "artist_name": ["string"],
         },
     },
 }
@@ -72,4 +125,3 @@ __all__ = [
     "get_rules",
     "get_rule_for",
 ]
-

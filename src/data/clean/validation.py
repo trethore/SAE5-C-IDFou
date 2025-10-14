@@ -6,6 +6,7 @@ from typing import Any, Callable, Literal, Sequence, cast
 
 import numpy as np
 import pandas as pd
+from standardisation import STANDARDISERS
 
 @dataclass
 class CleanReport:
@@ -19,6 +20,7 @@ class CleanReport:
     rule_failures: dict[str, int] = field(default_factory=dict)
     missing_columns: list[str] = field(default_factory=list)
     messages: list[str] = field(default_factory=list)
+    applied_standardisations: dict[str, list[str]] = field(default_factory=dict)
 
     @property
     def skipped(self) -> bool:
@@ -94,6 +96,8 @@ def _convert_to_boolean(value: Any) -> Any:
 
 
 def _is_nan(value: Any) -> bool:
+    if isinstance(value, (list, tuple, dict)):
+        return False
     return pd.isna(value)
 
 
@@ -109,13 +113,46 @@ def _to_datetime_utc(value: Any) -> pd.Timestamp | None:
     return None if pd.isna(timestamp) else timestamp
 
 
+def _parse_timecode(value: Any) -> tuple[int, int, int] | None:
+    if not isinstance(value, str):
+        return None
+
+    timecode = value.strip()
+    if not timecode:
+        return None
+
+    parts = timecode.split(":")
+    if len(parts) == 2:
+        minutes_str, seconds_str = parts
+        if not (minutes_str.isdigit() and seconds_str.isdigit()):
+            return None
+        minutes = int(minutes_str)
+        seconds = int(seconds_str)
+        if not 0 <= seconds < 60:
+            return None
+        return 0, minutes, seconds
+
+    elif len(parts) == 3:
+        hours_str, minutes_str, seconds_str = parts
+        if not (hours_str.isdigit() and minutes_str.isdigit() and seconds_str.isdigit()):
+            return None
+        hours = int(hours_str)
+        minutes = int(minutes_str)
+        seconds = int(seconds_str)
+        if not (0 <= minutes < 60 and 0 <= seconds < 60):
+            return None
+        return hours, minutes, seconds
+
+    return None
+
+
 def _now_utc() -> pd.Timestamp:
     return pd.Timestamp.now(tz="UTC")
 
 _NOW_UTC: Callable[[], pd.Timestamp] = _now_utc
 
 
-RuleFn = Callable[[Any, pd.Series | None], bool]
+ValidationRuleFn = Callable[[Any, pd.Series | None], bool]
 
 
 def _r_not_null(value: Any, _: pd.Series | None = None) -> bool:
@@ -182,7 +219,13 @@ def _r_is_array(value: Any, _: pd.Series | None = None) -> bool:
     return _is_nan(value) or isinstance(value, (list, tuple))
 
 
-_RULES: dict[str, RuleFn] = {
+def _r_is_timecode(value: Any, _: pd.Series | None = None) -> bool:
+    if _is_nan(value):
+        return True
+    return _parse_timecode(value) is not None
+
+
+VALIDATION_RULES: dict[str, ValidationRuleFn] = {
     "notNull": _r_not_null,
     "notNegative": _r_not_negative,
     "toLowerCase": _r_to_lower_case,
@@ -195,11 +238,12 @@ _RULES: dict[str, RuleFn] = {
     "date": _r_is_date,
     "boolean": _r_is_boolean,
     "array": _r_is_array,
+    "timecode": _r_is_timecode,
 }
 
 
 def _respect_rule(value: Any, rule: str, row: pd.Series | None = None) -> bool:
-    rule_fn = _RULES.get(rule)
+    rule_fn = VALIDATION_RULES.get(rule)
     if rule_fn is None:
         return True
     return rule_fn(value, row)
@@ -220,7 +264,7 @@ def _convert_value(value: Any, rules: list[str]) -> Any:
 
 
 def _validate_dataframe(
-    dataframe: pd.DataFrame, column_rules: dict[str, list[str]]
+    dataframe: pd.DataFrame, validation_rules: dict[str, list[str]]
 ) -> tuple[list[int], dict[str, int]]:
     valid_indices: list[int] = []
     rule_failure_stats: dict[str, int] = {}
@@ -228,7 +272,7 @@ def _validate_dataframe(
     for row_index, row in dataframe.iterrows():
         row_is_valid = True
 
-        for column, rules in column_rules.items():
+        for column, rules in validation_rules.items():
             if column not in dataframe.columns:
                 continue
 
@@ -250,8 +294,15 @@ def _validate_dataframe(
     return valid_indices, rule_failure_stats
 
 
-def clean_csv(csv_path: Path, config: dict[str, Any], output_dir: Path) -> CleanReport:
-    column_rules: dict[str, list[str]] = config.get("column_rules", {})
+def clean_csv(
+    csv_path: Path,
+    config: dict[str, Any],
+    output_dir: Path,
+    *,
+    limit: int | None = None,
+) -> CleanReport:
+    validation_rules: dict[str, list[str]] = config.get("validation_rules", {})
+    standardisation_rules: dict[str, list[str]] = config.get("standardisation_rules", {})
     csv_name = csv_path.name
 
     header_rows = cast(Sequence[int] | int | Literal["infer"] | None, config.get("header_rows"))
@@ -266,11 +317,27 @@ def clean_csv(csv_path: Path, config: dict[str, Any], output_dir: Path) -> Clean
 
     dataframe = dataframe.reset_index(drop=True)
 
-    missing_columns = [col for col in column_rules.keys() if col not in dataframe.columns]
+    pre_limit_count = len(dataframe)
 
-    selected_columns = [col for col in dataframe.columns if col in column_rules]
+    if limit is not None and limit >= 0:
+        dataframe = dataframe.iloc[:limit]
+
+    missing_columns = [col for col in validation_rules.keys() if col not in dataframe.columns]
+
+    selected_columns = [col for col in dataframe.columns if col in validation_rules]
     dataframe = dataframe[selected_columns]
     filtered_row_count = len(dataframe)
+
+    applied_standardisations: dict[str, list[str]] = {}
+    for column, standardisers in standardisation_rules.items():
+        if column not in dataframe.columns:
+            continue
+        for rule_name in standardisers:
+            standardise = STANDARDISERS.get(rule_name)
+            if standardise is None:
+                continue
+            dataframe.loc[:, column] = dataframe[column].apply(standardise)
+            applied_standardisations.setdefault(column, []).append(rule_name)
 
     if not selected_columns:
         return CleanReport(
@@ -286,10 +353,10 @@ def clean_csv(csv_path: Path, config: dict[str, Any], output_dir: Path) -> Clean
         )
 
     for column in selected_columns:
-        rules = column_rules[column]
+        rules = validation_rules[column]
         dataframe.loc[:, column] = dataframe[column].apply(lambda value: _convert_value(value, rules))
 
-    valid_indices, rule_failures = _validate_dataframe(dataframe, column_rules)
+    valid_indices, rule_failures = _validate_dataframe(dataframe, validation_rules)
     cleaned_dataframe = dataframe.loc[valid_indices]
 
     cleaned_row_count = len(cleaned_dataframe)
@@ -303,6 +370,10 @@ def clean_csv(csv_path: Path, config: dict[str, Any], output_dir: Path) -> Clean
     cleaned_dataframe.to_csv(output_path, index=False)
 
     message_lines: list[str] = []
+    if limit is not None and limit >= 0 and pre_limit_count > limit:
+        message_lines.append(
+            f"Processing limited to first {limit} rows (pre-limit rows: {pre_limit_count})."
+        )
     if missing_columns:
         message_lines.append(
             f"Missing columns for {csv_name}: {', '.join(sorted(missing_columns))}"
@@ -319,6 +390,7 @@ def clean_csv(csv_path: Path, config: dict[str, Any], output_dir: Path) -> Clean
         rule_failures=rule_failures,
         missing_columns=missing_columns,
         messages=message_lines,
+        applied_standardisations=applied_standardisations,
     )
 
 

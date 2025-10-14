@@ -6,7 +6,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from globalrules import DEFAULT_DATA_DIR, DEFAULT_OUTPUT_DIR, get_rule_for
-from rules import clean_csv, CleanReport
+from validation import clean_csv, CleanReport
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -36,6 +36,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "--stats",
         action="store_true",
         help="Display rule failure statistics for each processed CSV.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Limit the number of rows processed for each CSV (useful for quick checks).",
     )
     return parser
 
@@ -80,6 +86,12 @@ def _print_report(report: CleanReport, show_stats: bool) -> None:
         ):
             print(f"         - {rule_key}: {failure_count}")
 
+    if show_stats and report.applied_standardisations:
+        print("       Standardisation applied:")
+        for column, rule_names in sorted(report.applied_standardisations.items()):
+            rule_list = ", ".join(rule_names)
+            print(f"         - {column}: {rule_list}")
+
 
 def run(argv: Iterable[str] | None = None) -> int:
     parser = _build_parser()
@@ -111,7 +123,7 @@ def run(argv: Iterable[str] | None = None) -> int:
             )
             continue
 
-        report = clean_csv(csv_path, dict(rule_config), output_dir)
+        report = clean_csv(csv_path, dict(rule_config), output_dir, limit=args.limit)
         _print_report(report, args.stats)
 
     return exit_code

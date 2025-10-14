@@ -211,4 +211,214 @@ Les règles de validation décrivent les contraintes appliquées après standard
         }
     }
 ```
+
+### genres.csv
+
+```json
+    "genres.csv": {
+        "header_rows": [0],
+        "skip_rows": [],
+        "rename_columns": {},
+        "standardisation_rules": {
+            "genre_id": ["toInt"],
+            "parent": ["toInt"],
+            "title": ["trimSpaces", "toString"],
+            "top_level": ["toInt"],
+            "#tracks": ["toInt"]
+        },
+        "validation_rules": {
+            "genre_id": ["int", "notNull", "unique", "positiveNumber"],
+            "parent": ["int", "notNull", "notNegative"],
+            "title": ["string", "notNull"],
+            "top_level": ["int", "notNull", "positiveNumber"],
+            "#tracks": ["int", "notNull", "notNegative"]
+        }
+    }
+```
 > Note: la clé spéciale `"__all__"` applique les règles à chaque colonne qui n'a pas de configuration dédiée.
+
+### raw_echonest.csv
+
+```json
+    "raw_echonest.csv": {
+        "header_rows": [0, 1, 2],
+        "skip_rows": [0],
+        "rename_columns": {
+            "level_0_level_1_level_2": "track_id",
+            "echonest_audio_features_acousticness": "acousticness",
+            "echonest_audio_features_danceability": "danceability",
+            "echonest_audio_features_energy": "energy",
+            "echonest_audio_features_instrumentalness": "instrumentalness",
+            "echonest_audio_features_liveness": "liveness",
+            "echonest_audio_features_speechiness": "speechiness",
+            "echonest_audio_features_tempo": "tempo",
+            "echonest_audio_features_valence": "valence",
+            "echonest_ranks_artist_discovery_rank": "artist_discovery_rank",
+            "echonest_ranks_artist_familiarity_rank": "artist_familiarity_rank",
+            "echonest_ranks_artist_hotttnesss_rank": "artist_hotttnesss_rank",
+            "echonest_ranks_song_currency_rank": "song_currency_rank",
+            "echonest_ranks_song_hotttnesss_rank": "song_hotttnesss_rank",
+            "echonest_social_features_artist_discovery": "artist_discovery",
+            "echonest_social_features_artist_familiarity": "artist_familiarity",
+            "echonest_social_features_artist_hotttnesss": "artist_hotttnesss",
+            "echonest_social_features_song_currency": "song_currency",
+            "echonest_social_features_song_hotttnesss": "song_hotttnesss"
+        },
+        "standardisation_rules": {
+            "track_id": ["toInt"],
+            "acousticness": ["toFloat"],
+            "danceability": ["toFloat"],
+            "energy": ["toFloat"],
+            "instrumentalness": ["toFloat"],
+            "liveness": ["toFloat"],
+            "speechiness": ["toFloat"],
+            "tempo": ["toFloat"],
+            "valence": ["toFloat"],
+            "artist_discovery_rank": ["toFloat"],
+            "artist_familiarity_rank": ["toFloat"],
+            "artist_hotttnesss_rank": ["toFloat"],
+            "song_currency_rank": ["toFloat"],
+            "song_hotttnesss_rank": ["toFloat"],
+            "artist_discovery": ["toFloat"],
+            "artist_familiarity": ["toFloat"],
+            "artist_hotttnesss": ["toFloat"],
+            "song_currency": ["toFloat"],
+            "song_hotttnesss": ["toFloat"]
+        },
+        "validation_rules": {
+            "track_id": ["notNull", "unique", "int", "notNegative"],
+            "acousticness": ["notNull", "float", "notNegative"],
+            "danceability": ["notNull", "float", "notNegative"],
+            "energy": ["notNull", "float", "notNegative"],
+            "instrumentalness": ["notNull", "float", "notNegative"],
+            "liveness": ["notNull", "float", "notNegative"],
+            "speechiness": ["notNull", "float", "notNegative"],
+            "tempo": ["notNull", "float", "notNegative"],
+            "valence": ["notNull", "float", "notNegative"],
+            "artist_discovery_rank": ["float", "notNegative"],
+            "artist_familiarity_rank": ["float", "notNegative"],
+            "artist_hotttnesss_rank": ["float", "notNegative"],
+            "song_currency_rank": ["float", "notNegative"],
+            "song_hotttnesss_rank": ["float", "notNegative"],
+            "artist_discovery": ["notNull", "float", "notNegative"],
+            "artist_familiarity": ["notNull", "float", "notNegative"],
+            "artist_hotttnesss": ["notNull", "float", "notNegative"],
+            "song_currency": ["notNull", "float", "notNegative"],
+            "song_hotttnesss": ["notNull", "float", "notNegative"]
+        }
+    }
+```
+
+### raw_artists.csv
+
+```json
+    "raw_artists.csv": {
+        "header_rows": [0],
+        "skip_rows": [],
+        "rename_columns": {},
+        "standardisation_rules": {
+            "artist_id": ["toInt"],
+            "artist_name": ["trimSpaces", "toString"],
+            "artist_bio": ["toString"],
+            "artist_location": ["trimSpaces", "toString"],
+            "artist_latitude": ["toFloat"],
+            "artist_longitude": ["toFloat"],
+            "artist_members": ["toString"],
+            "artist_associated_labels": ["toString"],
+            "artist_related_projects": ["toString"],
+            "tags": ["normalizeTags", "toArray"],
+            "artist_active_year_begin": ["toInt"],
+            "artist_active_year_end": ["toInt"],
+            "artist_favorites": ["toInt"],
+            "artist_comments": ["toInt"]
+        },
+        "validation_rules": {
+            "artist_id": ["int", "notNull", "unique", "positiveNumber"],
+            "artist_name": ["string", "notNull"],
+            "artist_bio": ["string"],
+            "artist_location": ["string"],
+            "artist_latitude": ["float"],
+            "artist_longitude": ["float"],
+            "artist_members": ["string"],
+            "artist_associated_labels": ["string"],
+            "artist_related_projects": ["string"],
+            "tags": ["array"],
+            "artist_active_year_begin": ["int", "positiveNumber"],
+            "artist_active_year_end": ["int", "positiveNumber"],
+            "artist_favorites": ["int", "notNull", "notNegative"],
+            "artist_comments": ["int", "notNull", "notNegative"]
+        }
+    }
+```
+
+### echonest.csv
+
+```json
+    "echonest.csv": {
+        "header_rows": [0, 1, 2],
+        "skip_rows": [0],
+        "rename_columns": {
+            "level_0_level_1_level_2": "track_id",
+            "echonest_audio_features_acousticness": "acousticness",
+            "echonest_audio_features_danceability": "danceability",
+            "echonest_audio_features_energy": "energy",
+            "echonest_audio_features_instrumentalness": "instrumentalness",
+            "echonest_audio_features_liveness": "liveness",
+            "echonest_audio_features_speechiness": "speechiness",
+            "echonest_audio_features_tempo": "tempo",
+            "echonest_audio_features_valence": "valence",
+            "echonest_ranks_artist_discovery_rank": "artist_discovery_rank",
+            "echonest_ranks_artist_familiarity_rank": "artist_familiarity_rank",
+            "echonest_ranks_artist_hotttnesss_rank": "artist_hotttnesss_rank",
+            "echonest_ranks_song_currency_rank": "song_currency_rank",
+            "echonest_ranks_song_hotttnesss_rank": "song_hotttnesss_rank",
+            "echonest_social_features_artist_discovery": "artist_discovery",
+            "echonest_social_features_artist_familiarity": "artist_familiarity",
+            "echonest_social_features_artist_hotttnesss": "artist_hotttnesss",
+            "echonest_social_features_song_currency": "song_currency",
+            "echonest_social_features_song_hotttnesss": "song_hotttnesss"
+        },
+        "standardisation_rules": {
+            "track_id": ["toInt"],
+            "acousticness": ["toFloat"],
+            "danceability": ["toFloat"],
+            "energy": ["toFloat"],
+            "instrumentalness": ["toFloat"],
+            "liveness": ["toFloat"],
+            "speechiness": ["toFloat"],
+            "tempo": ["toFloat"],
+            "valence": ["toFloat"],
+            "artist_discovery_rank": ["toFloat"],
+            "artist_familiarity_rank": ["toFloat"],
+            "artist_hotttnesss_rank": ["toFloat"],
+            "song_currency_rank": ["toFloat"],
+            "song_hotttnesss_rank": ["toFloat"],
+            "artist_discovery": ["toFloat"],
+            "artist_familiarity": ["toFloat"],
+            "artist_hotttnesss": ["toFloat"],
+            "song_currency": ["toFloat"],
+            "song_hotttnesss": ["toFloat"]
+        },
+        "validation_rules": {
+            "track_id": ["notNull", "unique", "int", "notNegative"],
+            "acousticness": ["notNull", "float", "notNegative"],
+            "danceability": ["notNull", "float", "notNegative"],
+            "energy": ["notNull", "float", "notNegative"],
+            "instrumentalness": ["notNull", "float", "notNegative"],
+            "liveness": ["notNull", "float", "notNegative"],
+            "speechiness": ["notNull", "float", "notNegative"],
+            "tempo": ["notNull", "float", "notNegative"],
+            "valence": ["notNull", "float", "notNegative"],
+            "artist_discovery_rank": ["float", "notNegative"],
+            "artist_familiarity_rank": ["float", "notNegative"],
+            "artist_hotttnesss_rank": ["float", "notNegative"],
+            "song_currency_rank": ["float", "notNegative"],
+            "song_hotttnesss_rank": ["float", "notNegative"],
+            "artist_discovery": ["notNull", "float", "notNegative"],
+            "artist_familiarity": ["notNull", "float", "notNegative"],
+            "artist_hotttnesss": ["notNull", "float", "notNegative"],
+            "song_currency": ["notNull", "float", "notNegative"],
+            "song_hotttnesss": ["notNull", "float", "notNegative"]
+        }
+    }
+```

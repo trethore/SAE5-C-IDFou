@@ -3,7 +3,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-DRIVE_FILE_ID = "1RdRkIl92YbDIFHH83HnjJHuG1AsI5VIk"
+DRIVE_FILE_ID = "1S4KMI-bBA0b3BEi_D-PW5qtPc_UdEl4T"
 DRIVE_URL = f"https://drive.google.com/uc?id={DRIVE_FILE_ID}"
 
 def main():

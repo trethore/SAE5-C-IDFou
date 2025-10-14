@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Callable, Literal, Sequence, cast
 
 import numpy as np
 import pandas as pd
@@ -16,9 +16,9 @@ class CleanReport:
     cleaned_rows: int
     removed_rows: int
     retention_percentage: float
-    rule_failures: Dict[str, int] = field(default_factory=dict)
-    missing_columns: List[str] = field(default_factory=list)
-    messages: List[str] = field(default_factory=list)
+    rule_failures: dict[str, int] = field(default_factory=dict)
+    missing_columns: list[str] = field(default_factory=list)
+    messages: list[str] = field(default_factory=list)
 
     @property
     def skipped(self) -> bool:
@@ -27,7 +27,7 @@ class CleanReport:
 
 def _flatten_columns(dataframe: pd.DataFrame) -> None:
     if isinstance(dataframe.columns, pd.MultiIndex):
-        flattened: List[str] = []
+        flattened: list[str] = []
         for col in dataframe.columns.values:
             parts = [str(part) for part in col if str(part) != "nan"]
             name = "_".join(parts).strip("_")
@@ -41,7 +41,9 @@ def _flatten_columns(dataframe: pd.DataFrame) -> None:
     ]
 
 
-def _load_dataframe(csv_path: Path, header_rows: Iterable[int] | int | None) -> pd.DataFrame:
+def _load_dataframe(
+    csv_path: Path, header_rows: Sequence[int] | int | Literal["infer"] | None
+) -> pd.DataFrame:
     dataframe = pd.read_csv(csv_path, header=header_rows)
     _flatten_columns(dataframe)
     return dataframe
@@ -91,40 +93,119 @@ def _convert_to_boolean(value: Any) -> Any:
     return bool(value)
 
 
-def _respect_rule(value: Any, rule: str, row: pd.Series | None = None) -> bool:
-    if rule == "notNull":
-        return not pd.isna(value)
-    if rule == "notNegative":
-        if pd.isna(value):
-            return True
-        try:
-            return float(value) >= 0
-        except (ValueError, TypeError):
-            return False
-    if rule == "toLowerCase":
-        return pd.isna(value) or (isinstance(value, str) and value == value.lower())
-    if rule == "toUpperCase":
-        return pd.isna(value) or (isinstance(value, str) and value == value.upper())
-    if rule == "beforeNow":
-        if pd.isna(value):
-            return True
-        try:
-            return pd.to_datetime(value) < pd.Timestamp.now()
-        except (ValueError, TypeError):
-            return False
-    if rule == "afterNow":
-        if pd.isna(value):
-            return True
-        try:
-            return pd.to_datetime(value) > pd.Timestamp.now()
-        except (ValueError, TypeError):
-            return False
-    if rule in {"int", "float", "string", "date", "boolean", "array"}:
+def _is_nan(value: Any) -> bool:
+    return pd.isna(value)
+
+
+def _to_float(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _to_datetime_utc(value: Any) -> pd.Timestamp | None:
+    timestamp = pd.to_datetime(value, errors="coerce", utc=True)
+    return None if pd.isna(timestamp) else timestamp
+
+
+def _now_utc() -> pd.Timestamp:
+    return pd.Timestamp.now(tz="UTC")
+
+_NOW_UTC: Callable[[], pd.Timestamp] = _now_utc
+
+
+RuleFn = Callable[[Any, pd.Series | None], bool]
+
+
+def _r_not_null(value: Any, _: pd.Series | None = None) -> bool:
+    return not _is_nan(value)
+
+
+def _r_not_negative(value: Any, _: pd.Series | None = None) -> bool:
+    if _is_nan(value):
         return True
-    return True
+    numeric_value = _to_float(value)
+    return numeric_value is not None and numeric_value >= 0
 
 
-def _convert_value(value: Any, rules: List[str]) -> Any:
+def _r_to_lower_case(value: Any, _: pd.Series | None = None) -> bool:
+    return _is_nan(value) or (isinstance(value, str) and value == value.lower())
+
+
+def _r_to_upper_case(value: Any, _: pd.Series | None = None) -> bool:
+    return _is_nan(value) or (isinstance(value, str) and value == value.upper())
+
+
+def _r_before_now(value: Any, _: pd.Series | None = None) -> bool:
+    if _is_nan(value):
+        return True
+    timestamp = _to_datetime_utc(value)
+    return timestamp is not None and timestamp < _NOW_UTC()
+
+
+def _r_after_now(value: Any, _: pd.Series | None = None) -> bool:
+    if _is_nan(value):
+        return True
+    timestamp = _to_datetime_utc(value)
+    return timestamp is not None and timestamp > _NOW_UTC()
+
+
+def _r_is_int(value: Any, _: pd.Series | None = None) -> bool:
+    if _is_nan(value):
+        return True
+    numeric_value = _to_float(value)
+    return numeric_value is not None and float(numeric_value).is_integer()
+
+
+def _r_is_float(value: Any, _: pd.Series | None = None) -> bool:
+    if _is_nan(value):
+        return True
+    return _to_float(value) is not None
+
+
+def _r_is_string(value: Any, _: pd.Series | None = None) -> bool:
+    return _is_nan(value) or isinstance(value, str)
+
+
+def _r_is_date(value: Any, _: pd.Series | None = None) -> bool:
+    if _is_nan(value):
+        return True
+    return _to_datetime_utc(value) is not None
+
+
+def _r_is_boolean(value: Any, _: pd.Series | None = None) -> bool:
+    return _is_nan(value) or isinstance(value, (bool, np.bool_))
+
+
+def _r_is_array(value: Any, _: pd.Series | None = None) -> bool:
+    return _is_nan(value) or isinstance(value, (list, tuple))
+
+
+_RULES: dict[str, RuleFn] = {
+    "notNull": _r_not_null,
+    "notNegative": _r_not_negative,
+    "toLowerCase": _r_to_lower_case,
+    "toUpperCase": _r_to_upper_case,
+    "beforeNow": _r_before_now,
+    "afterNow": _r_after_now,
+    "int": _r_is_int,
+    "float": _r_is_float,
+    "string": _r_is_string,
+    "date": _r_is_date,
+    "boolean": _r_is_boolean,
+    "array": _r_is_array,
+}
+
+
+def _respect_rule(value: Any, rule: str, row: pd.Series | None = None) -> bool:
+    rule_fn = _RULES.get(rule)
+    if rule_fn is None:
+        return True
+    return rule_fn(value, row)
+
+
+def _convert_value(value: Any, rules: list[str]) -> Any:
     if "int" in rules:
         return _convert_to_int(value)
     if "float" in rules:
@@ -139,10 +220,10 @@ def _convert_value(value: Any, rules: List[str]) -> Any:
 
 
 def _validate_dataframe(
-    dataframe: pd.DataFrame, column_rules: Dict[str, List[str]]
-) -> Tuple[List[int], Dict[str, int]]:
-    valid_indices: List[int] = []
-    rule_failure_stats: Dict[str, int] = {}
+    dataframe: pd.DataFrame, column_rules: dict[str, list[str]]
+) -> tuple[list[int], dict[str, int]]:
+    valid_indices: list[int] = []
+    rule_failure_stats: dict[str, int] = {}
 
     for row_index, row in dataframe.iterrows():
         row_is_valid = True
@@ -164,16 +245,17 @@ def _validate_dataframe(
                 break
 
         if row_is_valid:
-            valid_indices.append(row_index)
+            valid_indices.append(cast(int, row_index))
 
     return valid_indices, rule_failure_stats
 
 
-def clean_csv(csv_path: Path, config: Dict[str, Any], output_dir: Path) -> CleanReport:
-    column_rules: Dict[str, List[str]] = config.get("column_rules", {})
+def clean_csv(csv_path: Path, config: dict[str, Any], output_dir: Path) -> CleanReport:
+    column_rules: dict[str, list[str]] = config.get("column_rules", {})
     csv_name = csv_path.name
 
-    dataframe = _load_dataframe(csv_path, config.get("header_rows"))
+    header_rows = cast(Sequence[int] | int | Literal["infer"] | None, config.get("header_rows"))
+    dataframe = _load_dataframe(csv_path, header_rows)
     original_row_count = len(dataframe)
 
     if rename_map := config.get("rename_columns"):
@@ -220,7 +302,7 @@ def clean_csv(csv_path: Path, config: Dict[str, Any], output_dir: Path) -> Clean
     output_path = output_dir / f"clean_{csv_name}"
     cleaned_dataframe.to_csv(output_path, index=False)
 
-    message_lines: List[str] = []
+    message_lines: list[str] = []
     if missing_columns:
         message_lines.append(
             f"Missing columns for {csv_name}: {', '.join(sorted(missing_columns))}"
@@ -241,4 +323,3 @@ def clean_csv(csv_path: Path, config: Dict[str, Any], output_dir: Path) -> Clean
 
 
 __all__ = ["CleanReport", "clean_csv"]
-

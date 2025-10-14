@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List
 
-from .globalrules import DEFAULT_DATA_DIR, DEFAULT_OUTPUT_DIR, get_rule_for, get_rules
-from .rules import clean_csv, CleanReport
+from globalrules import DEFAULT_DATA_DIR, DEFAULT_OUTPUT_DIR, get_rule_for
+from rules import clean_csv, CleanReport
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -40,9 +40,9 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _collect_targets(csv_names: Iterable[str] | None, data_dir: Path) -> List[Path]:
+def _collect_targets(csv_names: Iterable[str] | None, data_dir: Path) -> list[Path]:
     if csv_names:
-        targets: List[Path] = []
+        targets: list[Path] = []
         for name in csv_names:
             candidate = (data_dir / name).resolve()
             if not candidate.exists():
@@ -98,7 +98,6 @@ def run(argv: Iterable[str] | None = None) -> int:
         print("[WARN] No CSV files matched the provided criteria.")
         return 0
 
-    rules_by_csv = get_rules()
     exit_code = 0
 
     for csv_path in targets:
@@ -112,7 +111,7 @@ def run(argv: Iterable[str] | None = None) -> int:
             )
             continue
 
-        report = clean_csv(csv_path, rule_config, output_dir)
+        report = clean_csv(csv_path, dict(rule_config), output_dir)
         _print_report(report, args.stats)
 
     return exit_code
@@ -124,4 +123,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -17,13 +17,6 @@ toUpperCase: La valeur doit être en uppercase
 beforeNow: La valeur doit être une date inférieure à now
 afterNow: La valeur doit être une date supérieur à now
 
-// Spécifique
-
-Sur Tracks et Raw_Tracks :
-
-validRecordDate: La valeur doit être une date < au champ "track_date_created" qui doit aussi être une date et < a now.
-
-
 Application des règles:
 
 Tracks:
@@ -39,7 +32,7 @@ Tracks:
 "track_interest": notNull, notNegative, float
 "track_comments": notNull, notNegative, int
 "track_date_created": notNull, beforeNow, date
-"track_date_recorded": notNull, validRecordDate, date
+"track_date_recorded": notNull, date
 "track_composer": string
 "track_lyricist": string
 "track_publisher": string

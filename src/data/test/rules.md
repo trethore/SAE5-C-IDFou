@@ -11,7 +11,7 @@ Les règles de standardisation préparent les valeurs pour respecter un format c
 - toDouble: convertir en double (ex: “3.14” → 3.14).
 - toString: convertir en string (ex: 42 → “42”).
 - toBoolean: convertir en boolean (ex: “true” → True, “false” → False).
-- toArray: convertir les structures de type liste (ex: "1,2,3" ou "[1, 2, 3]" ou "['1', '2', '3']") en chaîne normalisée, chaque élément étant formaté selon son type et séparé par “|” (ex: ["Hip", "Hop"] → "Hip"|"Hop").
+- toArray: convertir les structures de type liste (ex: "1,2,3" ou "[1, 2, 3]" ou "['1', '2', '3']") en list JSON.
 - parseDate: convertir “2008/11/26” ou “26-11-2008” en format ISO YYYY-MM-DD. 
 
 
@@ -108,3 +108,49 @@ Les règles de validation décrivent les contraintes appliquées après standard
 ```
 
 ### tracks.csv
+
+```json
+    "tracks.csv": {
+        "header_rows": [0, 1],
+        "skip_rows": [0],
+        "rename_columns": {
+            "level_0_level_1": "track_id"
+        },
+        "standardisation_rules": {
+            "track_id": ["toInt"],
+            "album_id": ["toInt"],
+            "artist_id": ["toInt"],
+            "track_title": ["trimSpaces", "toString"],
+            "track_duration": ["normalizeDuration", "toInt"],
+            "track_genre_top": ["trimSpaces", "toString"],
+            "track_genres": ["extractGenreIds", "toArray"],
+            "track_tags": ["normalizeTags", "toArray"],
+            "track_listens": ["toInt"],
+            "track_favorites": ["toInt"],
+            "track_interest": ["toFloat"],
+            "track_comments": ["toInt"],
+            "track_date_created": ["parseDate"],
+            "track_composer": ["trimSpaces", "toString"],
+            "track_lyricist": ["trimSpaces", "toString"],
+            "track_publisher": ["trimSpaces", "toString"]
+        },
+        "validation_rules": {
+            "track_id": ["notNull", "notNegative", "int"],
+            "track_title": ["notNull", "string"],
+            "track_duration": ["notNull", "notNegative", "int"],
+            "track_genre_top": ["string"],
+            "track_genres": ["string", "array"],
+            "track_tags": ["string", "array"],
+            "track_listens": ["notNull", "notNegative", "int"],
+            "track_favorites": ["notNull", "notNegative", "int"],
+            "track_interest": ["notNull", "notNegative", "float"],
+            "track_comments": ["notNull", "notNegative", "int"],
+            "track_date_created": ["notNull", "beforeNow", "date"],
+            "track_composer": ["string"],
+            "track_lyricist": ["string"],
+            "track_publisher": ["string"],
+            "album_id": ["notNull", "notNegative", "int"],
+            "artist_id": ["notNull", "notNegative", "int"]
+        }
+    }
+```

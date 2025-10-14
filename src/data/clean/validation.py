@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Literal, Sequence, cast
@@ -46,13 +47,13 @@ def _flatten_columns(dataframe: pd.DataFrame) -> None:
 def _load_dataframe(
     csv_path: Path, header_rows: Sequence[int] | int | Literal["infer"] | None
 ) -> pd.DataFrame:
-    dataframe = pd.read_csv(csv_path, header=header_rows)
+    dataframe = pd.read_csv(csv_path, header=header_rows, low_memory=False)
     _flatten_columns(dataframe)
     return dataframe
 
 
 def _convert_to_int(value: Any) -> Any:
-    if pd.isna(value):
+    if _is_nan(value):
         return value
     try:
         return int(float(value))
@@ -61,7 +62,7 @@ def _convert_to_int(value: Any) -> Any:
 
 
 def _convert_to_float(value: Any) -> Any:
-    if pd.isna(value):
+    if _is_nan(value):
         return value
     try:
         return float(value)
@@ -70,13 +71,17 @@ def _convert_to_float(value: Any) -> Any:
 
 
 def _convert_to_string(value: Any) -> Any:
-    if pd.isna(value):
+    if _is_nan(value):
         return value
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=True)
+    if isinstance(value, (list, tuple, set, np.ndarray, pd.Series)):
+        return json.dumps(list(value), ensure_ascii=True)
     return str(value)
 
 
 def _convert_to_date(value: Any) -> Any:
-    if pd.isna(value):
+    if _is_nan(value):
         return value
     try:
         timestamp = pd.to_datetime(value)
@@ -86,7 +91,7 @@ def _convert_to_date(value: Any) -> Any:
 
 
 def _convert_to_boolean(value: Any) -> Any:
-    if pd.isna(value):
+    if _is_nan(value):
         return value
     if isinstance(value, bool):
         return value
@@ -96,9 +101,15 @@ def _convert_to_boolean(value: Any) -> Any:
 
 
 def _is_nan(value: Any) -> bool:
-    if isinstance(value, (list, tuple, dict)):
+    if isinstance(value, (list, tuple, dict, set, np.ndarray)):
         return False
-    return pd.isna(value)
+    try:
+        result = pd.isna(value)
+    except TypeError:
+        return False
+    if isinstance(result, (list, tuple, np.ndarray, pd.Series)):
+        return False
+    return bool(result)
 
 
 def _to_float(value: Any) -> float | None:
@@ -189,7 +200,20 @@ def _r_is_boolean(value: Any, _: pd.Series | None = None) -> bool:
 
 
 def _r_is_array(value: Any, _: pd.Series | None = None) -> bool:
-    return _is_nan(value) or isinstance(value, (list, tuple))
+    if _is_nan(value):
+        return True
+    if isinstance(value, (list, tuple)):
+        return True
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return False
+        try:
+            parsed = json.loads(text)
+        except (TypeError, ValueError):
+            return False
+        return isinstance(parsed, list)
+    return False
 
 
 VALIDATION_RULES: dict[str, ValidationRuleFn] = {

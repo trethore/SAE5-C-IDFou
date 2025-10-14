@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import json
 from typing import Any, Callable
 
 import pandas as pd
@@ -98,11 +99,13 @@ def normalize_tags(value: Any) -> Any:
             text = str(item).strip()
             if text:
                 cleaned.append(text)
-        elif isinstance(item, dict):
+            continue
+
+        if isinstance(item, dict):
             # use common keys if present
-            text = item.get("name") or item.get("tag") or item.get("value")
-            if isinstance(text, str):
-                text = text.strip()
+            candidate = item.get("name") or item.get("tag") or item.get("value")
+            if isinstance(candidate, str):
+                text = candidate.strip()
                 if text:
                     cleaned.append(text)
     return cleaned
@@ -112,41 +115,44 @@ def normalize_boolean(value: Any) -> bool:
     return to_boolean(value)
 
 
-def _stringify_scalar(value: Any) -> str:
+def _normalize_json_scalar(value: Any) -> Any:
     if _is_nan(value):
-        return ""
+        return None
     if isinstance(value, bool):
-        return "True" if value else "False"
+        return bool(value)
     if isinstance(value, (int, np.integer)):
-        return str(int(value))
+        return int(value)
     if isinstance(value, (float, np.floating)):
         numeric = float(value)
+        if np.isnan(numeric):
+            return None
         if numeric.is_integer():
-            return str(int(numeric))
-        return format(numeric, "g")
+            return int(numeric)
+        return numeric
     text = str(value).strip()
     if not text:
-        return ""
-    escaped = text.replace('"', '\\"')
-    return f"\"{escaped}\""
+        return None
+    return text
 
 
-def to_array(value: Any) -> str:
+def to_array(value: Any) -> Any:
     if _is_nan(value):
-        return ""
+        return value
 
     sequence = _coerce_sequence(value)
     if sequence is None:
-        formatted = _stringify_scalar(value)
-        return formatted
+        item = _normalize_json_scalar(value)
+        if item is None:
+            return json.dumps([], ensure_ascii=True)
+        return json.dumps([item], ensure_ascii=True)
 
-    parts: list[str] = []
+    normalised_items: list[Any] = []
     for item in sequence:
-        text = _stringify_scalar(item)
-        if text:
-            parts.append(text)
+        normalised = _normalize_json_scalar(item)
+        if normalised is not None:
+            normalised_items.append(normalised)
 
-    return "|".join(parts)
+    return json.dumps(normalised_items, ensure_ascii=True)
 
 
 def to_int(value: Any) -> Any:

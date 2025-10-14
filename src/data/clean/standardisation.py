@@ -286,12 +286,12 @@ def to_string(value: Any) -> Any:
         return value
 
     if isinstance(value, str):
-        text = value.strip()
-    else:
-        text = str(value)
+        return value.strip()
 
-    escaped = text.replace('"', '\\"')
-    return f"\"{escaped}\""
+    text = str(value).strip()
+    if not text:
+        return ""
+    return text
 
 
 def to_boolean(value: Any) -> Any:

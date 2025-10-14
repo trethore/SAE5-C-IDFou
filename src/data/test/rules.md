@@ -42,6 +42,8 @@ Les règles de validation décrivent les contraintes appliquées après standard
 
 - notNull: La valeur ne peut pas être NULL
 - notNegative: La valeur doit ne peut être < 0
+- positiveNumber: La valeur doit être strictement > 0
+- unique: La valeur ne doit pas être dupliquée dans la colonne
 - isLowerCase: La valeur doit être un string et en lower case
 - isUpperCase: La valeur doit être en uppercase
 - beforeNow: La valeur doit être une date inférieure à now
@@ -81,7 +83,7 @@ Les règles de validation décrivent les contraintes appliquées après standard
             "artist_name": ["trimSpaces", "toString"]
         },
         "validation_rules": {
-            "track_id": ["notNull", "notNegative", "int"],
+            "track_id": ["notNull", "unique", "notNegative", "int"],
             "album_id": ["notNull", "notNegative", "int"],
             "artist_id": ["notNull", "notNegative", "int"],
             "track_number": ["notNegative", "int"],
@@ -135,7 +137,7 @@ Les règles de validation décrivent les contraintes appliquées après standard
             "track_publisher": ["trimSpaces", "toString"]
         },
         "validation_rules": {
-            "track_id": ["notNull", "notNegative", "int"],
+            "track_id": ["notNull", "unique", "notNegative", "int"],
             "track_title": ["notNull", "string"],
             "track_duration": ["notNull", "notNegative", "int"],
             "track_genre_top": ["string"],
@@ -151,6 +153,40 @@ Les règles de validation décrivent les contraintes appliquées après standard
             "track_publisher": ["string"],
             "album_id": ["notNull", "notNegative", "int"],
             "artist_id": ["notNull", "notNegative", "int"]
+        }
+    }
+```
+
+### raw_albums.csv
+
+```json
+    "raw_albums.csv": {
+        "header_rows": [0],
+        "skip_rows": [],
+        "rename_columns": {},
+        "standardisation_rules": {
+            "album_id": ["toInt"],
+            "album_title": ["trimSpaces", "toString"],
+            "album_type": ["trimSpaces", "toString"],
+            "album_tracks": ["toInt"],
+            "album_date_released": ["parseDate"],
+            "album_listens": ["toInt"],
+            "album_favorites": ["toInt"],
+            "album_comments": ["toInt"],
+            "album_producer": ["trimSpaces", "toString"],
+            "tags": ["normalizeTags", "toArray"]
+        },
+        "validation_rules": {
+            "album_id": ["notNull", "unique", "int", "notNegative"],
+            "album_title": ["notNull", "string"],
+            "album_type": ["notNull", "string"],
+            "album_tracks": ["notNull", "int", "positiveNumber"],
+            "album_date_released": ["date", "beforeNow"],
+            "album_listens": ["notNull", "int", "notNegative"],
+            "album_favorites": ["notNull", "int", "notNegative"],
+            "album_comments": ["notNull", "int", "notNegative"],
+            "album_producer": ["string"],
+            "tags": ["array", "string"]
         }
     }
 ```

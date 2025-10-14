@@ -144,6 +144,13 @@ def _r_not_negative(value: Any, _: pd.Series | None = None) -> bool:
     return numeric_value is not None and numeric_value >= 0
 
 
+def _r_positive_number(value: Any, _: pd.Series | None = None) -> bool:
+    if _is_nan(value):
+        return True
+    numeric_value = _to_float(value)
+    return numeric_value is not None and numeric_value > 0
+
+
 def _r_to_lower_case(value: Any, _: pd.Series | None = None) -> bool:
     return _is_nan(value) or (isinstance(value, str) and value == value.lower())
 
@@ -219,6 +226,7 @@ def _r_is_array(value: Any, _: pd.Series | None = None) -> bool:
 VALIDATION_RULES: dict[str, ValidationRuleFn] = {
     "notNull": _r_not_null,
     "notNegative": _r_not_negative,
+    "positiveNumber": _r_positive_number,
     "toLowerCase": _r_to_lower_case,
     "toUpperCase": _r_to_upper_case,
     "beforeNow": _r_before_now,
@@ -233,7 +241,27 @@ VALIDATION_RULES: dict[str, ValidationRuleFn] = {
 }
 
 
-def _respect_rule(value: Any, rule: str, row: pd.Series | None = None) -> bool:
+def _respect_rule(
+    value: Any,
+    rule: str,
+    column: str,
+    row_index: int,
+    row: pd.Series | None = None,
+    *,
+    duplicates: dict[str, pd.Series] | None = None,
+) -> bool:
+    if rule == "unique":
+        if duplicates is None:
+            return True
+        duplicate_flags = duplicates.get(column)
+        if duplicate_flags is None:
+            return True
+        try:
+            is_duplicate = bool(duplicate_flags.iloc[row_index])
+        except IndexError:
+            return True
+        return not is_duplicate
+
     rule_fn = VALIDATION_RULES.get(rule)
     if rule_fn is None:
         return True
@@ -262,6 +290,11 @@ def _validate_dataframe(
     valid_indices: list[int] = []
     rule_failure_stats: dict[str, int] = {}
 
+    duplicates_by_column: dict[str, pd.Series] = {}
+    for column, rules in validation_rules.items():
+        if column in dataframe.columns and "unique" in rules:
+            duplicates_by_column[column] = dataframe[column].duplicated(keep=False)
+
     for row_index, row in dataframe.iterrows():
         row_is_valid = True
 
@@ -272,7 +305,14 @@ def _validate_dataframe(
             value = row[column]
 
             for rule in rules:
-                if not _respect_rule(value, rule, row):
+                if not _respect_rule(
+                    value,
+                    rule,
+                    column,
+                    cast(int, row_index),
+                    row,
+                    duplicates=duplicates_by_column,
+                ):
                     row_is_valid = False
                     rule_key = f"{column}:{rule}"
                     rule_failure_stats[rule_key] = rule_failure_stats.get(rule_key, 0) + 1

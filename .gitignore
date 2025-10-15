@@ -214,6 +214,7 @@ CLAUDE.md
 
 # Other
 data/*.csv
+cleaned_data/*.csv
 notes.md
 todo
 todo.txt

@@ -3,7 +3,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-DRIVE_FILE_ID = "1S4KMI-bBA0b3BEi_D-PW5qtPc_UdEl4T"
+DRIVE_FILE_ID = "1qPqFtijkDU02qKJdha89gAb-Bogh3bdV"
 DRIVE_URL = f"https://drive.google.com/uc?id={DRIVE_FILE_ID}"
 
 def main():
@@ -14,7 +14,7 @@ def main():
         sys.exit(1)
 
     here = Path(__file__).resolve().parent
-    data_dir = (here / "../../data").resolve()
+    data_dir = (here / "../cleaned_data").resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
 
     removed = 0
@@ -29,7 +29,7 @@ def main():
     if zip_path.exists():
         zip_path.unlink()
 
-    print("Downloading ZIP from Google Drive...")
+    print("Downloading clean data ZIP from Google Drive...")
     out = gdown.download(DRIVE_URL, str(zip_path), quiet=False)
     if not out or not zip_path.exists():
         print("Error: download failed or file missing.", file=sys.stderr)

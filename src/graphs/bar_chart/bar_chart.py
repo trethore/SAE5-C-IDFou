@@ -36,7 +36,6 @@ def plot_energy_by_genre(energy_by_genre: pd.Series, output_path: str):
 
 
 def main() -> int:
-    # même logique que ton autre script
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
     csv_path = os.path.join(project_root, "cleaned_data", "merged_tracks.csv")
     output_path = os.path.join(os.path.dirname(__file__), "energy_by_genre.png")

@@ -32,7 +32,7 @@ def _parse_track_genres(value: object) -> list[int]:
         try:
             parsed = ast.literal_eval(stripped)
         except (SyntaxError, ValueError):
-            # Fallback: split on comma for malformed payloads such as '21,34'
+            # Solution de secours : separer sur la virgule pour les valeurs mal formees comme '21,34'
             raw_list = [item.strip() for item in stripped.split(",") if item.strip()]
         else:
             raw_list = parsed if isinstance(parsed, (list, tuple)) else [parsed]
@@ -148,7 +148,7 @@ def _merge_raw_tracks(df: pd.DataFrame, data_dir: Path) -> pd.DataFrame:
     raw_tracks = pd.read_csv(raw_tracks_path).rename(columns={"tags": "track_tags_raw"})
     raw_tracks["track_id"] = _ensure_int(raw_tracks["track_id"])
 
-    # Avoid merging duplicate information already supplied elsewhere.
+    # Eviter de fusionner des informations dupliquees deja fournies ailleurs.
     drop_candidates = ("album_title", "artist_name")
     merged = _merge_with_priority(
         df,

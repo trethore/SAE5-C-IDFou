@@ -102,7 +102,7 @@ def normalize_tags(value: Any) -> Any:
             continue
 
         if isinstance(item, dict):
-            # use common keys if present
+            # Utiliser les cles courantes si presentes
             candidate = item.get("name") or item.get("tag") or item.get("value")
             if isinstance(candidate, str):
                 text = candidate.strip()

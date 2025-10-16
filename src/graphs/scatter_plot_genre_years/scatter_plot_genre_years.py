@@ -61,7 +61,7 @@ def plot_genre_popularity_by_year(
     # Robust genre cleaning: drop textual nulls and empties
     bad = {"", "nan", "none", "null", "unknown", "n/a", "na"}
     s = df["track_genre_top"].astype(str).str.strip()
-    df = df[s.str.lower().isin(bad) == False]
+    df = df[~s.str.lower().isin(bad)]
     df["track_genre_top"] = df["track_genre_top"].astype(str).str.strip()
     df[metric] = pd.to_numeric(df[metric], errors="coerce")
     df = df.dropna(subset=["year", "track_genre_top", metric])

@@ -9,7 +9,7 @@ def load_data(csv_path: str) -> pd.DataFrame:
     required_cols = {'album_id', 'track_number', 'track_listens'}
     missing = required_cols - set(df.columns)
     if missing:
-        raise ValueError(f"Colonnes manquantes dans le CSV : {', '.join(missing)}")
+        raise ValueError(f"Missing columns in CSV: {', '.join(missing)}")
     return df[['album_id', 'track_number', 'track_listens']].dropna()
 
 

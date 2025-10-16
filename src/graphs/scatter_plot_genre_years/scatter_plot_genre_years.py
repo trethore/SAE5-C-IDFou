@@ -31,7 +31,7 @@ def plot_genre_popularity_by_year(
     metric: str = "track_listens",
     agg: str = "median",
     top: int = 6,
-    top_by: str = "sum_metric",  
+    top_by: str = "sum_metric",
     min_year_count: int = 200,
     smooth_window: int = 3,
     log: bool = False,

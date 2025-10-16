@@ -14,7 +14,7 @@ def main():
         sys.exit(1)
 
     here = Path(__file__).resolve().parent
-    data_dir = (here / "../data").resolve()
+    data_dir = (here / "../../data").resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
 
     removed = 0

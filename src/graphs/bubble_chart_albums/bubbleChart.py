@@ -1,53 +1,41 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 import os
 
 
 def generate_bubble_chart(csv_path="../../../../data/merged_tracks.csv",
                           output_filename="bubble_chart_albums.png"):
-    """
-    Generate a bubble chart showing albums by energy, danceability and track count.
-    
-    Args:
-        csv_path (str): Path to the CSV file containing the data
-        output_filename (str): Name of the output PNG file to save
-    
-    Returns:
-        str: Path to the saved image file
-    """
-    
     # Charger le CSV
     df = pd.read_csv(csv_path)
     
     # Colonnes nécessaires pour le bubble chart
-    colonnes_necessaires = [
+    required_columns = [
         "album_id",
         "track_id",
-        "energy",             # For X axis
-        "danceability",       # For Y axis
-        "track_listens",      # For bubble size
-        "valence"             # For color (positivity)
+        "energy",             # Pour l'axe des X
+        "danceability",       # Pour l'axe des Y
+        "track_listens",      # Pour la taille des bulles
+        "valence"             # Pour la couleur (positivité)
     ]
     
     # Vérifier que toutes les colonnes existent
-    colonnes_manquantes = [col for col in colonnes_necessaires if col not in df.columns]
-    if colonnes_manquantes:
-        print(f"ERROR: Missing columns in CSV: {', '.join(colonnes_manquantes)}")
-        exit(1)
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        print(f"ERROR: Missing columns in CSV: {', '.join(missing_columns)}")
+        raise SystemExit(1)
     
     # Filtrer le dataframe
-    df_bubble = df[colonnes_necessaires].copy()
+    df_bubble = df[required_columns].copy()
     
     # Supprimer les lignes avec des valeurs manquantes
     df_bubble = df_bubble.dropna()
     
     # Regrouper par album_id et calculer les moyennes + nombre de tracks
     df_albums = df_bubble.groupby('album_id').agg({
-        'energy': 'mean',             # Average energy per album
-        'danceability': 'mean',       # Average danceability per album
-        'valence': 'mean',            # Average valence per album
-        'track_id': 'count'           # Number of tracks per album (for size)
+        'energy': 'mean',             # Énergie moyenne par album
+        'danceability': 'mean',       # Danseabilité moyenne par album
+        'valence': 'mean',            # Valence moyenne par album
+        'track_id': 'count'           # Nombre de morceaux par album (pour la taille)
     }).reset_index()
     
     # Renommer la colonne track_id en track_count
@@ -119,12 +107,11 @@ def generate_bubble_chart(csv_path="../../../../data/merged_tracks.csv",
     # Sauvegarder le graphique
     output_path = os.path.join('./', output_filename)
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.close()  # Fermer la figure pour libérer la mémoire
+    plt.close()
     
     print(f"Bubble chart saved successfully at: {output_path}")
     return output_path
 
 
-# Point d'entrée principal
 if __name__ == "__main__":
     generate_bubble_chart()

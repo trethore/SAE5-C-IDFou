@@ -1,25 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 import os
 
 
 def generate_area_chart(csv_path: str = "../../../cleaned_data/merged_tracks.csv",
                         output_filename: str = "area_chart_artists.png",
                         top_n: int = 9):
-    """
-    Area chart pour artistes (style simple, comme bubbleChart), en gardant tes valeurs:
-      - Top N artistes par artist_favorites
-      - Axe X = tempo (découpé en 12 bins)
-      - Y = nombre de morceaux par bin (count)
-      - Aires empilées (stacked), non normalisées
-
-    Args:
-        csv_path (str): chemin du CSV fusionné (merged_tracks.csv)
-        output_filename (str): nom du fichier PNG de sortie
-    Returns:
-        str: chemin du fichier image sauvegardé
-    """
 
     # Charger le CSV
     df = pd.read_csv(csv_path)
@@ -117,4 +103,3 @@ def generate_area_chart(csv_path: str = "../../../cleaned_data/merged_tracks.csv
 
 if __name__ == "__main__":
     generate_area_chart()
-

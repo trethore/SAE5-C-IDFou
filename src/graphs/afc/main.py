@@ -25,7 +25,7 @@ def main() -> None:
 
     if (p_val > 0.5 or p_val_std > 0.5):
         print("Factor Analysis of Correspondence irrelevant")
-        exit(0)
+        raise SystemExit(0)
 
     nb_factors: int = get_nb_factors(contingency_table, standardized_contingency_table)
     afc(standardized_contingency_table, nb_factors)
@@ -38,11 +38,11 @@ def load_data() -> pd.DataFrame:
         data = pd.read_csv(
             CSV_PATH,
             low_memory=False,
-            # nrows=1000
+            # Paramètre nrows=1000 possible pour limiter la lecture
         )
     except FileNotFoundError:
         print("CSV not found. Make sure to run this script from the root of the repository.")
-        exit(1)
+        raise SystemExit(1)
     print("CSV loaded.\n")
     return data
 
@@ -81,9 +81,6 @@ def get_nb_factors(contingency_table: pd.DataFrame, X_scaled: pd.DataFrame) -> i
     for v in ev:
         if v > 1:
             nb_factors += 1
-
-    # fa_new = FactorAnalysis(n_components=max_nb_factors, random_state=0)
-    # X_transformed = fa_new.fit_transform(X_scaled)
 
     columns = [f"col_{i}" for i in range(max_nb_factors)]
     df_factors = pd.DataFrame(fa.loadings_, columns=columns, index=X_scaled.columns)

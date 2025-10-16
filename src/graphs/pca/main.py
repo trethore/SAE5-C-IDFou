@@ -150,7 +150,7 @@ def save_explained_variance(pca: PCA) -> pd.DataFrame:
     })
     df_ev.to_csv(OUT_DIR / "explained_variance.csv", index=False)
 
-    # Scree plot
+    # Graphe des éboulis
     plt.figure(figsize=(8, 5))
     plt.bar(range(1, len(evr) + 1), evr * 100)
     plt.plot(range(1, len(evr) + 1), np.cumsum(evr) * 100, marker="o")
@@ -166,8 +166,8 @@ def save_explained_variance(pca: PCA) -> pd.DataFrame:
 
 
 def biplot_variables(pca: PCA, feature_names: list[str], top_k: int = 30) -> pd.DataFrame:
-    # Charges (loadings): composantes x variables
-    loadings = pca.components_.T  # shape: (variables, composantes)
+    # Charges factorielles : composantes x variables
+    loadings = pca.components_.T
     df_load = pd.DataFrame(loadings, index=feature_names,
                            columns=[f"Dim{i+1}" for i in range(loadings.shape[1])])
     df_load.to_csv(OUT_DIR / "loadings.csv")
@@ -207,8 +207,8 @@ def biplot_variables(pca: PCA, feature_names: list[str], top_k: int = 30) -> pd.
 
 
 def plot_individuals(X_std: np.ndarray, pca: PCA, cat: pd.Series | None) -> pd.DataFrame:
-    # Coordonnées individus
-    scores = pca.transform(X_std)  # shape: (n_samples, n_components)
+    # Coordonnées des individus
+    scores = pca.transform(X_std)
     df_scores = pd.DataFrame({"Dim1": scores[:, 0]})
 
     if pca.n_components_ >= 2:

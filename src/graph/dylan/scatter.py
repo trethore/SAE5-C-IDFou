@@ -34,6 +34,7 @@ def plot_average_listens(avg_listens: pd.Series, output_path: str, max_track: in
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(output_path)
+    plt.close()
     print(f"Graphique sauvegardé sous : {output_path}")
 
 

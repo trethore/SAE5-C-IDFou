@@ -10,7 +10,7 @@ def load_data(csv_path: str) -> pd.DataFrame:
     missing = required_cols - set(df.columns)
     if missing:
         raise ValueError(f"Missing columns in CSV: {', '.join(missing)}")
-    return df[list(required_cols)].dropna()
+    return df[['track_genre_top', 'energy']].dropna()
 
 
 def compute_energy_by_genre(df: pd.DataFrame) -> pd.Series:

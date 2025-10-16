@@ -22,17 +22,8 @@ def plot_energy_by_genre(energy_by_genre: pd.Series, output_path: str):
     plt.figure(figsize=(20, 10))
     bars = plt.bar(energy_by_genre.index, energy_by_genre.values, color='orange')
 
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(
-            bar.get_x() + bar.get_width() / 2,
-            height + 0.01,
-            f"{height:.2f}",
-            ha='center',
-            va='bottom',
-            fontsize=14,   
-            rotation=0     
-        )
+    ax = plt.gca()
+    ax.bar_label(bars, fmt='%.2f', padding=3, fontsize=14)
 
     plt.xticks(rotation=45, ha='right')
     plt.xlabel('Music Genre', fontsize=14)

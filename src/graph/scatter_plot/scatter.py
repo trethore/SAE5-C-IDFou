@@ -27,10 +27,11 @@ def compute_average_listens(df: pd.DataFrame) -> pd.Series:
 def plot_average_listens(avg_listens: pd.Series, output_path: str, max_track: int = 50):
     avg_listens = avg_listens[avg_listens.index <= max_track]
     plt.figure(figsize=(10, 6))
-    avg_listens.plot(kind='line', marker='o', color='purple')
+    avg_listens.plot(kind='line', marker='o', color='purple', label='Moyenne des écoutes')
     plt.title(f"Average Track Listens by Track Position (tracks 1 to {max_track})")
     plt.xlabel("Track Number in Album")
     plt.ylabel("Average Listens")
+    plt.legend()  # ✅ Légende ajoutée ici
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(output_path)
@@ -39,7 +40,6 @@ def plot_average_listens(avg_listens: pd.Series, output_path: str, max_track: in
 
 
 def main() -> int:
-
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
     csv_path = os.path.join(project_root, "cleaned_data", "merged_tracks.csv")
     output_path = os.path.join(os.path.dirname(__file__), "scatter.png")

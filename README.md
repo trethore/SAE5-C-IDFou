@@ -81,8 +81,14 @@ Le paramètre `--output` est optionnel ; sans lui, le fichier est écrit automat
 
 ## Générer les graphiques
 
-Lancez le script pour produire toutes les visualisations :
-```bash
-python src/graphs/run_all_graphs.py
-```
-Les figures seront exportées dans `outputs/` à la racine du projet.
+1. Activer l'environnement virtuel :
+   ```bash
+   source src/.venv/bin/activate
+   ```
+2. Lancer l'orchestrateur :
+   ```bash
+   python src/graphs/run_all_graphs.py
+   ```
+
+Le script crée automatiquement un sous-répertoire par visualisation dans `outputs/<graph_name>/`.  
+

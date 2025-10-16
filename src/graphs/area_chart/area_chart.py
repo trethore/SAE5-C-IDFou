@@ -1,3 +1,10 @@
+"""Visualise la répartition du nombre de morceaux par artiste en fonction du tempo via un area chart empilé.
+
+Utilisation :
+    python3 src/graphs/area_chart/area_chart.py
+(à lancer depuis la racine du projet pour accéder à 'cleaned_data/merged_tracks.csv' et produire 'area_chart_artists.png')
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import os

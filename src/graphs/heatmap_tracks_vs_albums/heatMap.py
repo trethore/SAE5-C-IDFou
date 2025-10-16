@@ -1,3 +1,10 @@
+"""Produit une heatmap des corrélations entre les caractéristiques des morceaux et la moyenne de leur album.
+
+Utilisation :
+    python3 src/graphs/heatmap_tracks_vs_albums/heatMap.py
+(exécuter depuis la racine du projet avec le fichier 'cleaned_data/merged_tracks.csv' disponible)
+"""
+
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt

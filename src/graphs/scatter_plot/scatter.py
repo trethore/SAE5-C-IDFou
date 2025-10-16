@@ -1,3 +1,10 @@
+"""Trace la moyenne des écoutes par position des morceaux au sein de chaque album.
+
+Utilisation :
+    python3 src/graphs/scatter_plot/scatter.py
+(exécuter depuis la racine du projet pour lire 'cleaned_data/merged_tracks.csv' et sauvegarder 'scatter.png')
+"""
+
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt

@@ -1,3 +1,10 @@
+"""Génère un diagramme en barres de l'énergie moyenne par genre musical.
+
+Utilisation :
+    python3 src/graphs/bar_chart/bar_chart.py
+(à lancer depuis la racine du projet après préparation des données dans 'cleaned_data/merged_tracks.csv')
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys

@@ -1,3 +1,10 @@
+"""Génère un diagramme circulaire de la répartition des écoutes par genre principal.
+
+Utilisation :
+    python3 src/graphs/pie/main.py
+(déclencher depuis la racine du projet pour lire 'cleaned_data/merged_tracks.csv' et sauvegarder dans 'src/graphs/output/')
+"""
+
 from pathlib import Path
 from typing import List, Sequence, Tuple, cast
 

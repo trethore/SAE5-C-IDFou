@@ -1,3 +1,10 @@
+"""Construit un bubble chart pour comparer les albums selon énergie, danseabilité et valence.
+
+Utilisation :
+    python3 src/graphs/bubble_chart_albums/bubbleChart.py
+(depuis la racine du projet, après génération de 'cleaned_data/merged_tracks.csv')
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import os

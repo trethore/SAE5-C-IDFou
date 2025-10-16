@@ -1,3 +1,11 @@
+"""Analyse l'évolution d'un indicateur (écoutes ou favoris) par genre et par année via un graphique linéaire.
+
+Utilisation de base :
+    python3 src/graphs/scatter_plot_genre_years/scatter_plot_genre_years.py
+    python3 src/graphs/scatter_plot_genre_years/scatter_plot_genre_years.py --help  # pour la liste des options
+(l'exécution doit se faire depuis la racine du projet ou en fournissant un chemin CSV explicite)
+"""
+
 from __future__ import annotations
 
 import argparse

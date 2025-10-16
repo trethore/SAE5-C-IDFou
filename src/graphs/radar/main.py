@@ -1,3 +1,10 @@
+"""Compare les moyennes de plusieurs attributs audio pour des genres sélectionnés via un radar chart.
+
+Utilisation :
+    python3 src/graphs/radar/main.py
+(exécuter depuis la racine du projet pour accéder à 'cleaned_data/merged_tracks.csv' et créer 'src/graphs/output/radar_comparison.png')
+"""
+
 from math import pi
 from pathlib import Path
 from typing import Dict, List, Tuple

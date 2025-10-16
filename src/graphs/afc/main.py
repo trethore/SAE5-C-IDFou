@@ -1,3 +1,10 @@
+"""Réalise une analyse factorielle de correspondance (AFC) sur les artistes et genres principaux.
+
+Utilisation :
+    python3 src/graphs/afc/main.py
+(à lancer depuis la racine du projet pour accéder à 'data/merged_tracks.csv' et sauvegarder les sorties dans 'graphs/matthieu/')
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.decomposition import FactorAnalysis

@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Effectue une analyse en composantes principales sur les attributs audio des morceaux.
+
+Utilisation :
+    python3 src/graphs/pca/main.py
+(lancer depuis la racine du projet après création de 'cleaned_data/merged_tracks.csv' ; les résultats sont enregistrés dans 'src/graphs/pca/out/')
+"""
 
 import sys
 from pathlib import Path

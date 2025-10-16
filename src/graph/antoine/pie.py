@@ -73,7 +73,8 @@ ax.legend(
     title="Genres",
     loc="center left",
     bbox_to_anchor=(1, 0, 0.5, 1),
-    fontsize=9
+    fontsize=12,
+    title_fontsize=14
 )
 
 plt.tight_layout()

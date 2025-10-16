@@ -31,6 +31,7 @@ def plot_energy_by_genre(energy_by_genre: pd.Series, output_path: str):
     plt.title('Average Energy by Music Genre', fontsize=18)
     plt.tight_layout()
     plt.savefig(output_path)
+    plt.close()
     print(f"Graphique sauvegardé sous : {output_path}")
 
 

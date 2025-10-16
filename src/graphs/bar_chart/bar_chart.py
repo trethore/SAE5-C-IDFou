@@ -10,16 +10,19 @@ def load_data(csv_path: str) -> pd.DataFrame:
     missing = required_cols - set(df.columns)
     if missing:
         raise ValueError(f"Missing columns in CSV: {', '.join(missing)}")
+    # On ne conserve que les colonnes utiles pour le calcul de l'énergie moyenne par genre.
     return df[['track_genre_top', 'energy']].dropna()
 
 
 def compute_energy_by_genre(df: pd.DataFrame) -> pd.Series:
+    # Agrégation par genre pour calculer la moyenne d'énergie associée à chaque catégorie musicale.
     energy_by_genre = df.groupby('track_genre_top')['energy'].mean()
     return energy_by_genre.dropna().sort_values(ascending=True)
 
 
 def plot_energy_by_genre(energy_by_genre: pd.Series, output_path: str):
     plt.figure(figsize=(20, 10))
+    # Chaque barre représente un genre et sa valeur correspond à l'énergie moyenne calculée précédemment.
     bars = plt.bar(energy_by_genre.index, energy_by_genre.values, color='orange')
 
     ax = plt.gca()

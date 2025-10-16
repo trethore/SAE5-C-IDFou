@@ -10,23 +10,27 @@ def load_data(csv_path: str) -> pd.DataFrame:
     missing = required_cols - set(df.columns)
     if missing:
         raise ValueError(f"Missing columns in CSV: {', '.join(missing)}")
+    # Sélection des colonnes nécessaires pour comprendre la position et l'audience de chaque morceau.
     return df[['album_id', 'track_number', 'track_listens']].dropna()
 
 
 def keep_first_n_tracks_per_album(df: pd.DataFrame, n: int = 50) -> pd.DataFrame:
     df_sorted = df.sort_values(['album_id', 'track_number'])
+    # On limite la taille de l'ensemble en gardant uniquement les n premières pistes de chaque album.
     filtered_df = df_sorted.groupby('album_id').head(n)
     print(f"Les {n} premiers morceaux de chaque album sont conservés.")
     return filtered_df
 
 
 def compute_average_listens(df: pd.DataFrame) -> pd.Series:
+    # Calcul de l'audience moyenne pour chaque position dans l'album.
     return df.groupby('track_number')['track_listens'].mean()
 
 
 def plot_average_listens(avg_listens: pd.Series, output_path: str, max_track: int = 50):
     avg_listens = avg_listens[avg_listens.index <= max_track]
     plt.figure(figsize=(10, 6))
+    # La courbe met en évidence comment les écoutes évoluent selon la position du morceau dans l'album.
     avg_listens.plot(kind='line', marker='o', color='purple', label='Average Listens')
     plt.title(f"Average Track Listens by Track Position (tracks 1 to {max_track})")
     plt.xlabel("Track Number in Album")

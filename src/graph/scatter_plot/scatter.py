@@ -27,16 +27,16 @@ def compute_average_listens(df: pd.DataFrame) -> pd.Series:
 def plot_average_listens(avg_listens: pd.Series, output_path: str, max_track: int = 50):
     avg_listens = avg_listens[avg_listens.index <= max_track]
     plt.figure(figsize=(10, 6))
-    avg_listens.plot(kind='line', marker='o', color='purple', label='Moyenne des écoutes')
+    avg_listens.plot(kind='line', marker='o', color='purple', label='Average Listens')
     plt.title(f"Average Track Listens by Track Position (tracks 1 to {max_track})")
     plt.xlabel("Track Number in Album")
     plt.ylabel("Average Listens")
-    plt.legend()  # ✅ Légende ajoutée ici
+    plt.legend()
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
-    print(f"Graphique sauvegardé sous : {output_path}")
+    print(f"Graph saved : {output_path}")
 
 
 def main() -> int:

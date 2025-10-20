@@ -1,10 +1,12 @@
 # SAE5-C-IDFou
 
-## Aperçu
+## Track Partie 1
+
+### Aperçu
 
 Projet de data analyse réalisé dans le cadre de la SAÉ du 5ᵉ semestre. L'objectif est de nettoyer, fusionner et explorer différents jeux de données musicaux afin de préparer des visualisations et analyses statistiques.
 
-## Architecture du projet
+### Architecture du projet
 
 ```text
 .
@@ -16,7 +18,7 @@ Projet de data analyse réalisé dans le cadre de la SAÉ du 5ᵉ semestre. L'ob
 └── README.md               # Vous êtes ici
 ```
 
-## Préparer l'environnement
+### Préparer l'environnement
 
 1. Installer Python 3.13 ou plus récent.
 2. Créer un environnement virtuel isolé dans le dépôt :
@@ -30,7 +32,7 @@ Projet de data analyse réalisé dans le cadre de la SAÉ du 5ᵉ semestre. L'ob
    pip install -r requirements.txt
    ```
 
-## Téléchargement des données
+### Téléchargement des données
 
 - Scripts disponibles dans `src/download/`.
 - `download_data.py` récupère l’archive Google Drive des CSV bruts.
@@ -42,15 +44,15 @@ Exemple d’utilisation (après activation de l’environnement) :
 python src/download/download_all.py
 ```   
 
-## Jeux de données
+### Jeux de données
 
 - `data/` : dépôts CSV bruts fournis par le sujet (`echonest.csv`, `features.csv`, `genres.csv`, `raw_*`, `tracks.csv`, etc.). Ils ne doivent pas être modifiés manuellement.
 - `cleaned_data/` : sorties produites par le nettoyage des donnés (`clean_*`, `merged_tracks.csv`). Chaque fichier reflète les mêmes schémas que les bruts, mais avec les lignes filtrées, les valeurs standardisées et des métadonnées de suivi.
 
 
-## Nettoyage des données
+### Nettoyage des données
 
-### Validation et Standardisation des données
+#### Validation et Standardisation des données
 
 - Point d'entrée : `src/clean/main.py`.
 - Les règles de validation sont centralisées dans `src/clean/globalrules.py` (description des colonnes, types attendus, règles de standardisation).
@@ -66,7 +68,7 @@ Arguments utiles :
 - `--limit N` pour tester sur un sous-échantillon.
 - `--stats` pour afficher le détail des règles appliquées.
 
-### Fusion des données sur tracks
+#### Fusion des données sur tracks
 
 - Point d'entrée : `src/merge/main.py`. Le script charge `clean_tracks.csv` puis fusionne séquentiellement les données de `clean_genres.csv`, `clean_raw_albums.csv`, `clean_raw_artists.csv`, `clean_features.csv`, `clean_echonest.csv` et `clean_raw_tracks.csv`.
 - Les colonnes clés (`track_id`, `album_id`, `artist_id`) sont retypées en entiers nullable pour éviter les échecs de jointure, et les listes de genres sont normalisées avant l'`explode`.
@@ -79,7 +81,7 @@ python src/merge/main.py --data-dir cleaned_data --output cleaned_data/merged_tr
 ```
 Le paramètre `--output` est optionnel ; sans lui, le fichier est écrit automatiquement dans le dossier passé à `--data-dir`.
 
-## Générer les graphiques
+### Générer les graphiques
 
 1. Activer l'environnement virtuel :
    ```bash

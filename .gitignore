@@ -212,14 +212,13 @@ AGENTS.md
 CLAUDE.md
 .claude/
 
-# Other
-data/*.csv
-cleaned_data/*.csv
+# T1_analyse_de_donnees
+T1_analyse_de_donnees/data/*.csv
+T1_analyse_de_donnees/cleaned_data/*.csv
 notes.md
 todo
 todo.txt
 
-# Out
-
-out/
-outputs/
+## Out
+T1_analyse_de_donnees/out/
+T1_analyse_de_donnees/outputs/

@@ -1,0 +1,32 @@
+{
+    "À quel moment de la journée écoutez-vous le plus de la musique ?": {
+        "Matin": 1,
+        "Midi": 2,
+        "Après-midi": 3,
+        "Soir": 4
+    },
+    "Quelle est la durée moyenne des musiques que vous écoutez ?": {
+        "- de 2 minutes": 2,
+        "- de 5 minutes": 5,
+        "- de 10 minutes": 5,
+        "+ de 10 minutes": 10
+    },
+    "Quel est le tempo des musiques que vous écoutez ?": {
+        "Lent": 1,
+        "Rapide": 2,
+        "Très rapide": 3,
+        "Très très rapide": 4
+    },
+    "La qualité de l'audio est importante pour moi": {
+        "En désaccord": 1,
+        "Plutôt en désaccord": 2,
+        "Plutôt d'accord": 3,
+        "D'accord": 4
+    },
+    "A quel point êtes vous prêt(e) à découvrir de nouveaux genres ou artistes ?": {
+        "Je veux uniquement écouter la musique que j’aime déjà": 1,
+        "Je préfère rester sur les genres que je connais déjà": 2,
+        "J’aime bien découvrir, mais je garde mes styles habituels": 3,
+        "J’adore découvrir de nouveaux genres et artistes": 4
+    }
+}

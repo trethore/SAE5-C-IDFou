@@ -370,7 +370,7 @@ def parse_date(value: Any) -> Any:
     else:
         candidate = value
 
-    timestamp = pd.to_datetime(candidate, errors="coerce")
+    timestamp = pd.to_datetime(candidate, format="%d/%m/%Y %H:%M:%S", errors="coerce")
     if pd.isna(timestamp):
         return value
     return timestamp.strftime("%Y-%m-%d")

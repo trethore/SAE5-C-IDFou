@@ -14,14 +14,14 @@ import pandas as pd
 from matplotlib.patches import Wedge
 from matplotlib.text import Text
 
+from globalrules import DEFAULT_OUTPUT_DIR, DEFAULT_GRAPHS_FOLDER
+
 
 def resolve_paths() -> Tuple[Path, Path]:
     """Retourne le chemin du jeu de données et du dossier de sortie."""
     # Garantir que le script fonctionne quel que soit le répertoire courant
-    src_dir = Path(__file__).resolve().parents[3]
-    project_root = src_dir.parent
-    data_path = project_root / "cleaned_data" / "merged_tracks.csv"
-    output_dir = src_dir / "graphs" / "output"
+    data_path = DEFAULT_OUTPUT_DIR / "clean_answers.csv"
+    output_dir = DEFAULT_GRAPHS_FOLDER / "output"
     output_dir.mkdir(parents=True, exist_ok=True)
     return data_path, output_dir
 

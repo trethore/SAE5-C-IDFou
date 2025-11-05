@@ -141,12 +141,13 @@ def _normalize_json_scalar(value: Any) -> Any:
     return text
 
 
+
 def to_array(value: Any) -> Any:
     if _is_nan(value):
         return value
 
     if isinstance(value, str):
-        sequence = [v.strip() for v in value.split(",")]
+        sequence = [v.strip() for v in value.replace("/", ",").split(",") if v.strip()]
     else:
         try:
             sequence = list(value)
@@ -403,6 +404,7 @@ def normalize_duration(value: Any) -> Any:
                 return value
 
     return value
+    
 def trim_emoji(text: str) -> str:
     """Remove emoji and other pictographic symbols from a string."""
     if _is_nan(text):

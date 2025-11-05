@@ -8,8 +8,8 @@
     "Quelle est la durée moyenne des musiques que vous écoutez ?": {
         "- de 2 minutes": 2,
         "- de 5 minutes": 5,
-        "- de 10 minutes": 5,
-        "+ de 10 minutes": 10
+        "- de 10 minutes": 10,
+        "+ de 10 minutes": 11
     },
     "Quel est le tempo des musiques que vous écoutez ?": {
         "Lent": 1,

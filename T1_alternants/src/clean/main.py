@@ -5,9 +5,8 @@ import sys
 from collections.abc import Iterable
 from pathlib import Path
 
-from globalrules import DEFAULT_DATA_DIR, DEFAULT_OUTPUT_DIR, get_rule_for
+from globalrules import DEFAULT_CONVERTION_RULES, DEFAULT_DATA_DIR, DEFAULT_OUTPUT_DIR, get_rule_for
 from validation import clean_csv, CleanReport
-
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(

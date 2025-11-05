@@ -8,6 +8,9 @@ import re
 import pandas as pd
 import numpy as np
 
+import json
+from pathlib import Path
+
 StandardisationFn = Callable[[Any], Any]
 
 
@@ -140,12 +143,13 @@ def to_array(value: Any) -> Any:
     if _is_nan(value):
         return value
 
-    sequence = _coerce_sequence(value)
-    if sequence is None:
-        item = _normalize_json_scalar(value)
-        if item is None:
-            return json.dumps([], ensure_ascii=True)
-        return json.dumps([item], ensure_ascii=True)
+    if isinstance(value, str):
+        sequence = [v.strip() for v in value.split(",")]
+    else:
+        try:
+            sequence = list(value)
+        except TypeError:
+            sequence = [value]
 
     normalised_items: list[Any] = []
     for item in sequence:
@@ -153,7 +157,7 @@ def to_array(value: Any) -> Any:
         if normalised is not None:
             normalised_items.append(normalised)
 
-    return json.dumps(normalised_items, ensure_ascii=True)
+    return json.dumps(normalised_items, ensure_ascii=False)
 
 
 def to_int(value: Any) -> Any:
@@ -312,10 +316,10 @@ def to_boolean(value: Any) -> Any:
         return bool(numeric)
 
     if isinstance(value, str):
-        text = value.strip().lower()
-        if text in {"true", "1", "yes", "y"}:
+        text = value.strip().lower().split(',')[0]
+        if text in {"true", "1", "yes", "y", "oui"}:
             return True
-        if text in {"false", "0", "no", "n"}:
+        if text in {"false", "0", "no", "n", "non"}:
             return False
         return value
 
@@ -397,22 +401,49 @@ def normalize_duration(value: Any) -> Any:
                 return value
 
     return value
-
 def trim_emoji(text: str) -> str:
     """Remove emoji and other pictographic symbols from a string."""
+    if _is_nan(text):
+        return text
+
     emoji_pattern = re.compile(
         "["
-        "\U0001F600-\U0001F64F"  # emoticons
-        "\U0001F300-\U0001F5FF"  # symbols & pictographs
-        "\U0001F680-\U0001F6FF"  # transport & map symbols
-        "\U0001F1E0-\U0001F1FF"  # flags
-        "\U00002702-\U000027B0"  # dingbats
-        "\U000024C2-\U0001F251"
+        "\U0001F600-\U0001F64F"
+        "\U0001F300-\U0001F5FF"
+        "\U0001F680-\U0001F6FF"
+        "\U0001F900-\U0001F9FF"
+        "\U0001FA70-\U0001FAFF"
+        "\U0001F1E0-\U0001F1FF"
+        "\U00002600-\U000026FF"
+        "\U00002700-\U000027BF"
+        "\U0001F100-\U0001F1FF"
+
+        "\U0001F7E0-\U0001F7FF"
+        "\u2300-\u23FF"
+        "\u2600-\u27BF"
+
+        "\u1BE4"
+
+        "\uFE0E-\uFE0F"
+        "\u200D"
+        "\u200B-\u200F"
+        "\u2060-\u206F"
         "]+",
-        flags=re.UNICODE,
+        flags=re.UNICODE
     )
+
     return emoji_pattern.sub("", text)
 
+def convert_to_quantitative(text: str) -> int | None:
+    with open(DEFAULT_CONVERTION_RULES / 'convertion_rules.json', 'r', encoding='utf-8') as json_data:
+        d = json.load(json_data)
+
+    for question, answers in d.items():
+        for label, value in answers.items():
+            if label.strip().lower() == text.strip().lower():
+                return value
+
+    return None
 
 STANDARDISERS: dict[str, StandardisationFn] = {
     "toLowerCase": to_lower_case,
@@ -430,7 +461,7 @@ STANDARDISERS: dict[str, StandardisationFn] = {
     "toString": to_string,
     "toBoolean": to_boolean,
     "trimEmoji": trim_emoji,
-    "convertToQuantitative": convert_to_quantitative,
+    "convertToQuantitative": convert_to_quantitative
 }
 
 __all__ = [
@@ -450,6 +481,6 @@ __all__ = [
     "to_double",
     "to_string",
     "to_boolean",
-    "trim_emoji": trim_emoji,
-    "convert_to_quantitative": convert_to_quantitative
+    "trim_emoji",
+    "convert_to_quantitative"
 ]

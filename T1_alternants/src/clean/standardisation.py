@@ -11,6 +11,8 @@ import numpy as np
 import json
 from pathlib import Path
 
+from globalrules import DEFAULT_CONVERTION_RULES
+
 StandardisationFn = Callable[[Any], Any]
 
 
@@ -435,6 +437,9 @@ def trim_emoji(text: str) -> str:
     return emoji_pattern.sub("", text)
 
 def convert_to_quantitative(text: str) -> int | None:
+    if _is_nan(text):
+        return text
+
     with open(DEFAULT_CONVERTION_RULES / 'convertion_rules.json', 'r', encoding='utf-8') as json_data:
         d = json.load(json_data)
 

@@ -62,8 +62,8 @@ RULES_BY_CSV: RulesByCsv = {
         "skip_rows": [],
         "rename_columns": {
             "Horodateur": "created_at",
-            "Pour être sûr": "has_consented",
-            "Écoutez-vous de la musique ?": "is_listening",
+            "Pour être sûr ": "has_consented",
+            "Écoutez-vous de la musique ? ": "is_listening",
             "🗓️🎵 À quelle fréquence écoutez-vous de la musique ?": "frequency",
             "🏘️🎵 Dans quel(s) contexte(s) écoutez-vous vos musiques ?": "context",
             "🌞🎵 À quel moment de la journée écoutez-vous le plus de la musique ? ": "when",

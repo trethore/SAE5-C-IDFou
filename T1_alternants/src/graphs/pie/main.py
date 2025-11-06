@@ -13,9 +13,13 @@ import numpy as np
 import pandas as pd
 from matplotlib.patches import Wedge
 from matplotlib.text import Text
+import ast
+
+import os, sys
+globalrules_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../clean'))
+sys.path.append(globalrules_path)
 
 from globalrules import DEFAULT_OUTPUT_DIR, DEFAULT_GRAPHS_FOLDER
-
 
 def resolve_paths() -> Tuple[Path, Path]:
     """Retourne le chemin du jeu de données et du dossier de sortie."""
@@ -28,15 +32,14 @@ def resolve_paths() -> Tuple[Path, Path]:
 
 def load_genre_streams(data_path: Path) -> Tuple[pd.Series, int]:
     """Charge les données et agrège les écoutes par genre principal."""
+    # Load data
     df = pd.read_csv(data_path)
-    # Nettoyer les données : supprimer les valeurs nulles
-    df_clean = df.dropna(subset=["track_genre_top", "track_listens"]).copy()
-    # Grouper par genre principal et sommer les streams
-    genre_streams = (
-        df_clean.groupby("track_genre_top")["track_listens"]
-        .sum()
-        .sort_values(ascending=False)
-    )
+    df_clean = df.dropna(subset=["track_genre"]).copy()
+    df_clean["track_genre"] = df_clean["track_genre"].apply(ast.literal_eval)
+
+    df_exploded = df_clean.explode("track_genre")
+    genre_streams = df_exploded["track_genre"].value_counts()
+
     return genre_streams, len(df_clean)
 
 

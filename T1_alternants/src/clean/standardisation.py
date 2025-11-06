@@ -160,7 +160,8 @@ def to_array(value: Any) -> Any:
         if normalised is not None:
             normalised_items.append(normalised)
 
-    return json.dumps(normalised_items, ensure_ascii=False)
+    return normalised_items
+
 
 
 def to_int(value: Any) -> Any:

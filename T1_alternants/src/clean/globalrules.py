@@ -85,7 +85,7 @@ RULES_BY_CSV: RulesByCsv = {
         "standardisation_rules": {
             "created_at": ["parseDate"],
             "has_consented": ["trimEmoji", "trimSpaces", "toString", "toLowerCase"],
-            "is_listening": ["trimEmoji", "trimSpaces", "toBoolean", "toLowerCase"],
+            "is_listening": ["trimEmoji", "trimSpaces", "toBoolean", "toLowerCase", "isTrue"],
             "frequency": ["trimEmoji", "trimSpaces", "toString", "toLowerCase"],
             "context": ["trimEmoji", "trimSpaces", "toArray", "toLowerCase"],
             "when": ["trimEmoji", "trimSpaces", "convertToQuantitative", "toLowerCase"],

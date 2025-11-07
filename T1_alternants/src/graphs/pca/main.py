@@ -5,6 +5,37 @@
 Utilisation :
     python3 src/graphs/pca/main.py
 (lancer depuis la racine du projet après création de 'cleaned_data/merged_tracks.csv' ; les résultats sont enregistrés dans 'src/graphs/pca/out/')
+
+
+pca = PCA(n_components=7)
+pca_res = pca.fit_transform(data_scaled)
+
+
+#tableau
+eig=pd.DataFrame({
+   "Dimension": ["Dim" + str(x+1) for x in range(7)],
+   "Valeur propre": pca.explained_variance_,
+   "% valeur propre": np.round(pca.explained_variance_ratio_*100),
+   "% cum. val. prop.": np.round(np.cumsum(pca.explained_variance_ratio_*100)),
+})
+eig.head()
+
+#diagramme en baton avec les dimensions
+y1 = list(pca.explained_variance_ratio_)
+x1 = range(len(y1)) 
+plt.bar(x1,y1)
+plt.show()
+
+#graph avec fleches et points
+y = data['Sleep Disorder']
+biplot(
+    score=pca_res[:,0:2],
+    coeff=np.transpose(pca.components_[0:2, :]),
+    cat=y, 
+    coeff_labels = dimensions_quant,
+    density=False)
+
+plt.show()
 """
 
 import sys
@@ -20,23 +51,23 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 
+import os, sys
+globalrules_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../clean'))
+sys.path.append(globalrules_path)
+from globalrules import DEFAULT_OUTPUT_DIR, DEFAULT_GRAPHS_FOLDER
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
-CSV_PATH = (ROOT / "cleaned_data/merged_tracks.csv").resolve()
+CSV_PATH = DEFAULT_OUTPUT_DIR / 'clean_answers.csv'
 OUT_DIR = (HERE / "out").resolve()
+
 PREFERRED_PATTERNS = [
-    "energy",
-    "danceability",
-    "valence",
-    "acousticness",
-    "instrumentalness",
-    "liveness",
-    "speechiness",
+    "when",
+    "duration",
     "tempo",
+    "quality",
+    "curiosity",
 ]
-
-
 
 def ensure_outdir() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -51,7 +82,7 @@ def load_data(path: Path) -> pd.DataFrame:
 
 def pick_features(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     # Variable catégorielle pour colorier les individus
-    cat = df.get("track_genre_top")
+    cat = df.get("age_range")
     # Exclure identifiants évidents
     drop_like = {"track_id", "album_id", "artist_id"}
     cols = [c for c in df.columns if c not in drop_like]
@@ -220,7 +251,7 @@ def plot_individuals(X_std: np.ndarray, pca: PCA, cat: pd.Series | None) -> pd.D
     if pca.n_components_ >= 2:
         df_scores["Dim2"] = scores[:, 1]
 
-    # Tenter de colorier par variable catégorielle (track_genre_top)
+    # Tenter de colorier par variable catégorielle (age_range)
     if cat is not None:
         df_scores["cat"] = cat.astype("category")
         # Grouper les modalités rares
@@ -240,7 +271,7 @@ def plot_individuals(X_std: np.ndarray, pca: PCA, cat: pd.Series | None) -> pd.D
             else:
                 plt.scatter(sub["Dim1"], np.zeros(len(sub)), s=10, alpha=0.7,
                             label=str(c), c=[color_map[c]])
-        plt.legend(title="track_genre_top", fontsize=8, markerscale=1.5, ncol=2)
+        plt.legend(title="age_range", fontsize=8, markerscale=1.5, ncol=2)
     else:
         plt.figure(figsize=(8, 6))
         if pca.n_components_ >= 2:

@@ -219,6 +219,9 @@ notes.md
 todo
 todo.txt
 
+#T2_BDD
+data/
+
 ## Out
 T1_analyse_de_donnees/out/
 T1_analyse_de_donnees/outputs/

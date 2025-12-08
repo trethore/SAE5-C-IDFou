@@ -99,6 +99,14 @@ def _convert_to_boolean(value: Any) -> Any:
         return value.lower() in {"true", "1", "yes"}
     return bool(value)
 
+def _r_is_true(value: Any, _: pd.Series | None = None) -> bool:
+    if _is_nan(value):
+        return False
+    boolean_value = _convert_to_boolean(value)
+    if isinstance (boolean_value, bool):
+        return boolean_value
+    else:
+        return False
 
 def _is_nan(value: Any) -> bool:
     if isinstance(value, (list, tuple, dict, set, np.ndarray)):
@@ -231,6 +239,7 @@ VALIDATION_RULES: dict[str, ValidationRuleFn] = {
     "toUpperCase": _r_to_upper_case,
     "beforeNow": _r_before_now,
     "afterNow": _r_after_now,
+    "isTrue": _r_is_true,
     "int": _r_is_int,
     "float": _r_is_float,
     "double": _r_is_double,

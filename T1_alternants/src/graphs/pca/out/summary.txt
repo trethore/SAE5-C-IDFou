@@ -1,0 +1,9 @@
+PCA completed.
+Observations: 168 | Numeric variables: 4
+Dim1+Dim2 cumulative variance: 56.38%
+Selected variables: when, duration, tempo, quality
+Dimension  Eigenvalue  %_variance  %_cumulative
+     Dim1    1.214400       30.18         30.18
+     Dim2    1.054404       26.20         56.38
+     Dim3    0.920975       22.89         79.27
+     Dim4    0.834174       20.73        100.00

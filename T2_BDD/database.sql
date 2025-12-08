@@ -1,10 +1,22 @@
+-- ====================================================================================
+-- SCHEMA + VUES + FONCTIONS/TRIGGERS
+-- ====================================================================================
+
+-- extension pour UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-DROP TABLE IF EXISTS account, artist, album, genre, track, audio_feature, temporal_feature, tag, playlist, rank_track, rank_artist, license, track_genre, track_tag, artist_tag, album_artist, track_artist_main, track_artist_feat, track_license, playlist_track, "user", preference, playlist_user, track_user_like, track_user_listen CASCADE;
+-- ------------------------------------------------
+-- DROP
+-- ------------------------------------------------
+DROP TABLE IF EXISTS account, artist, album, genre, track, audio_feature, temporal_feature, tag, playlist, rank_track, rank_artist, license, track_genre, track_tag, artist_tag, album_artist, track_artist_main, track_artist_feat, track_license, playlist_track, "user", preference, playlist_user, track_user_like, track_user_listen, track_comment CASCADE;
+
+-- ====================================================================================
+-- TABLES
+-- ====================================================================================
 
 CREATE TABLE account (
     account_id UUID DEFAULT uuid_generate_v4(),
-    login VARCHAR(255),
+    login VARCHAR(255) UNIQUE,
     password VARCHAR(255),
     name VARCHAR(255),
     email VARCHAR(255),
@@ -15,7 +27,7 @@ CREATE TABLE account (
 CREATE TABLE artist (
     artist_id UUID DEFAULT uuid_generate_v4(),
     artist_bio TEXT,
-    artist_location VARCHAR(255),
+    artist_location TEXT,
     artist_latitude DOUBLE PRECISION,
     artist_longitude DOUBLE PRECISION,
     artist_active_year_begin INTEGER,
@@ -28,7 +40,7 @@ CREATE TABLE artist (
 
 CREATE TABLE album (
     album_id UUID DEFAULT uuid_generate_v4(),
-    album_title VARCHAR(255),
+    album_title TEXT,
     album_type VARCHAR(255),
     album_tracks_count INTEGER,
     album_date_released DATE,
@@ -492,7 +504,7 @@ CREATE TABLE preference (
     position VARCHAR(255),
     has_consented BOOLEAN,
     is_listening BOOLEAN,
-    frequency VARCHAR(255),  -- CSV has text like "+ d'une fois par jour"
+    frequency INTEGER,
     when_listening DOUBLE PRECISION,
     duration_pref INTEGER,
     energy_pref VARCHAR(255),
@@ -501,7 +513,7 @@ CREATE TABLE preference (
     is_live_pref VARCHAR(255),
     quality_pref INTEGER,
     curiosity_pref INTEGER,
-    context VARCHAR(255),  -- CSV has list like "['seul(e)', 'entre amis']"
+    context INTEGER,
     how VARCHAR(255),
     platform VARCHAR(255),
     utility VARCHAR(255),
@@ -534,3 +546,698 @@ CREATE TABLE track_user_listen (
     FOREIGN KEY (account_id) REFERENCES "user"(account_id)
 );
 
+
+CREATE TABLE track_comment (
+    comment_id UUID DEFAULT uuid_generate_v4(),
+    track_id UUID NOT NULL,
+    account_id UUID,
+    content TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (comment_id),
+    FOREIGN KEY (track_id) REFERENCES track(track_id),
+    FOREIGN KEY (account_id) REFERENCES "user"(account_id)
+);
+
+CREATE OR REPLACE VIEW v_track_full AS
+SELECT
+    t.track_id,
+    t.album_id,
+    t.track_title,
+    t.track_duration,
+    t.track_number,
+    t.track_disc_number,
+    t.track_explicit,
+    t.track_instrumental,
+    t.track_listens,
+    t.track_favorites,
+    t.track_interest,
+    t.track_comments,
+    t.track_date_created,
+    t.track_composer,
+    t.track_lyricist,
+    t.track_publisher,
+    a.album_title,
+    a.album_date_released,
+    a.album_tracks_count,
+    (SELECT json_agg(json_build_object('artist_id', tam.artist_id))
+       FROM track_artist_main tam WHERE tam.track_id = t.track_id) AS main_artists,
+    (SELECT json_agg(json_build_object('artist_id', taf.artist_id))
+       FROM track_artist_feat taf WHERE taf.track_id = t.track_id) AS feat_artists,
+    (SELECT json_agg(g.title)
+       FROM track_genre tg JOIN genre g ON g.genre_id = tg.genre_id
+       WHERE tg.track_id = t.track_id) AS genres,
+    (SELECT json_agg(tag_name)
+       FROM track_tag tt JOIN tag tg ON tg.tag_id = tt.tag_id
+       WHERE tt.track_id = t.track_id) AS tags,
+    af.acousticness,
+    af.danceability,
+    af.energy,
+    af.instrumentalness,
+    af.liveness,
+    af.speechiness,
+    af.tempo,
+    af.valence,
+    to_jsonb(tf) - 'track_id' AS temporal_features
+FROM track t
+LEFT JOIN album a ON t.album_id = a.album_id
+LEFT JOIN audio_feature af ON af.track_id = t.track_id
+LEFT JOIN temporal_feature tf ON tf.track_id = t.track_id;
+
+CREATE OR REPLACE VIEW v_album_full AS
+SELECT
+    al.album_id,
+    al.album_title,
+    al.album_type,
+    al.album_tracks_count,
+    al.album_date_released,
+    (SELECT json_agg(json_build_object('artist_id', aa.artist_id)) 
+       FROM album_artist aa WHERE aa.album_id = al.album_id) AS artists,
+    (SELECT json_agg(json_build_object('track_id', t.track_id, 'track_title', t.track_title, 'track_number', t.track_number)) 
+       FROM track t WHERE t.album_id = al.album_id) AS tracks
+FROM album al;
+
+CREATE OR REPLACE VIEW v_artist_full AS
+SELECT
+    ar.artist_id,
+    ar.artist_bio,
+    ar.artist_location,
+    ar.artist_latitude,
+    ar.artist_longitude,
+    ar.artist_active_year_begin,
+    ar.artist_active_year_end,
+    ar.artist_favorites,
+    ar.artist_comments,
+    (SELECT json_agg(tag_id) FROM artist_tag at WHERE at.artist_id = ar.artist_id) AS tags,
+    (SELECT json_agg(album_id) FROM album_artist aa WHERE aa.artist_id = ar.artist_id) AS albums,
+    (SELECT json_agg(track_id) FROM track_artist_main tam WHERE tam.artist_id = ar.artist_id) AS main_tracks,
+    (SELECT json_agg(track_id) FROM track_artist_feat taf WHERE taf.artist_id = ar.artist_id) AS feat_tracks
+FROM artist ar;
+
+CREATE OR REPLACE VIEW v_tracks_list AS
+SELECT
+    track_id,
+    track_title,
+    track_duration,
+    track_listens,
+    track_favorites,
+    track_comments
+FROM track;
+
+CREATE OR REPLACE VIEW v_albums_list AS
+SELECT
+    album_id,
+    album_title,
+    album_tracks_count,
+    album_listens,
+    album_favorites,
+    album_comments
+FROM album;
+
+CREATE OR REPLACE VIEW v_artists_list AS
+SELECT
+    artist_id,
+    artist_bio,
+    artist_location,
+    artist_favorites,
+    artist_comments
+FROM artist;
+
+CREATE OR REPLACE VIEW v_track_popularity AS
+SELECT
+    t.track_id,
+    t.track_title,
+    t.track_listens,
+    t.track_favorites,
+    t.track_comments,
+    rt.rank_song_currency,
+    rt.rank_song_hotttnesss
+FROM track t
+LEFT JOIN rank_track rt ON rt.track_id = t.track_id;
+
+CREATE OR REPLACE VIEW v_artist_popularity AS
+SELECT
+    ar.artist_id,
+    ar.artist_bio,
+    ar.artist_favorites,
+    ar.artist_comments,
+    ra.rank_artist_discovery,
+    ra.rank_artist_familiarity,
+    ra.rank_artist_hotttnesss
+FROM artist ar
+LEFT JOIN rank_artist ra ON ra.artist_id = ar.artist_id;
+
+CREATE OR REPLACE VIEW v_user_playlists AS
+SELECT
+    u.account_id,
+    u.pseudo,
+    pu.playlist_id,
+    p.playlist_name,
+    (SELECT json_agg(pt.track_id ORDER BY pt.track_id) 
+       FROM playlist_track pt WHERE pt.playlist_id = p.playlist_id) AS track_ids
+FROM "user" u
+LEFT JOIN playlist_user pu ON pu.account_id = u.account_id
+LEFT JOIN playlist p ON p.playlist_id = pu.playlist_id;
+
+CREATE OR REPLACE VIEW v_track_comments AS
+SELECT
+    tc.track_id,
+    json_agg(json_build_object('comment_id', tc.comment_id, 'account_id', tc.account_id, 'content', tc.content, 'created_at', tc.created_at) ORDER BY tc.created_at) AS comments
+FROM track_comment tc
+GROUP BY tc.track_id;
+
+CREATE OR REPLACE VIEW v_user_listen_history AS
+SELECT
+    tul.account_id,
+    json_agg(tul.track_id) AS listened_track_ids
+FROM track_user_listen tul
+GROUP BY tul.account_id;
+
+CREATE OR REPLACE VIEW v_user_summary AS
+SELECT
+    u.account_id,
+    u.pseudo,
+    a.login,
+    a.email,
+    a.name,
+    a.created_at AS account_created_at,
+    p.age_range,
+    p.gender,
+    p.position,
+    p.has_consented,
+    p.is_listening,
+    p.frequency,
+    p.when_listening,
+    p.duration_pref,
+    p.energy_pref,
+    p.tempo_pref,
+    p.feeling_pref,
+    p.is_live_pref,
+    p.quality_pref,
+    p.curiosity_pref,
+    p.context,
+    p.how,
+    p.platform,
+    p.utility,
+    p.track_genre
+FROM "user" u
+LEFT JOIN account a ON a.account_id = u.account_id
+LEFT JOIN preference p ON p.account_id = u.account_id;
+
+CREATE OR REPLACE VIEW v_tracks_recommended AS
+SELECT
+    t.track_id,
+    t.track_title,
+    af.energy,
+    af.tempo,
+    af.valence,
+    rt.rank_song_hotttnesss,
+    t.track_listens,
+    t.track_favorites
+FROM track t
+LEFT JOIN audio_feature af ON af.track_id = t.track_id
+LEFT JOIN rank_track rt ON rt.track_id = t.track_id;
+
+CREATE OR REPLACE VIEW v_entity_tags AS
+SELECT 'track' AS entity_type, tt.track_id AS entity_id, tg.tag_id, tg.tag_name 
+FROM track_tag tt 
+JOIN tag tg ON tg.tag_id = tt.tag_id
+UNION ALL
+SELECT 'artist' AS entity_type, at.artist_id AS entity_id, tg.tag_id, tg.tag_name 
+FROM artist_tag at 
+JOIN tag tg ON tg.tag_id = at.tag_id;
+
+CREATE OR REPLACE VIEW v_track_audio AS
+SELECT
+    t.track_id,
+    af.acousticness,
+    af.danceability,
+    af.energy,
+    af.instrumentalness,
+    af.liveness,
+    af.speechiness,
+    af.tempo,
+    af.valence,
+    to_jsonb(tf) - 'track_id' AS temporal_features
+FROM track t
+LEFT JOIN audio_feature af ON af.track_id = t.track_id
+LEFT JOIN temporal_feature tf ON tf.track_id = t.track_id;
+
+-- ====================================================================================
+-- FONCTIONS & TRIGGERS
+-- ====================================================================================
+
+/*
+  Helper: fonction pour incrémenter album_tracks_count (utilisée par triggers insert/delete)
+*/
+CREATE OR REPLACE FUNCTION f_inc_album_tracks_count(p_album_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE album
+  SET album_tracks_count = COALESCE(album_tracks_count,0) + 1
+  WHERE album_id = p_album_id;
+END;
+$$ LANGUAGE plpgsql;
+
+/*
+  Helper: fonction pour décrémenter album_tracks_count
+*/
+CREATE OR REPLACE FUNCTION f_dec_album_tracks_count(p_album_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE album
+  SET album_tracks_count = GREATEST(COALESCE(album_tracks_count,0) - 1, 0)
+  WHERE album_id = p_album_id;
+END;
+$$ LANGUAGE plpgsql;
+
+/*
+  Trigger: après INSERT track -> si album_id NULL créer un album (single) et set NEW.album_id
+           et ensuite incrémenter album_tracks_count.
+  On implémente la création d'album dans un trigger BEFORE INSERT pour pouvoir modifier NEW.album_id.
+*/
+CREATE OR REPLACE FUNCTION f_track_before_insert_create_album_if_null()
+RETURNS trigger AS $$
+DECLARE created_album_id UUID;
+BEGIN
+  IF NEW.album_id IS NULL THEN
+    INSERT INTO album(album_title, album_type, album_tracks_count, album_date_released)
+    VALUES (COALESCE(NEW.track_title, 'Untitled') || ' - Single', 'single', 1, COALESCE(NEW.track_date_created, CURRENT_DATE))
+    RETURNING album_id INTO created_album_id;
+
+    NEW.album_id := created_album_id;
+    -- set counters on track (initial)
+    NEW.track_listens := COALESCE(NEW.track_listens, 0);
+    NEW.track_favorites := COALESCE(NEW.track_favorites, 0);
+    NEW.track_comments := COALESCE(NEW.track_comments, 0);
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_track_before_insert_create_album_if_null
+BEFORE INSERT ON track
+FOR EACH ROW
+EXECUTE FUNCTION f_track_before_insert_create_album_if_null();
+
+/*
+  Trigger: après INSERT sur track -> incrémente album_tracks_count (si album existant)
+  et crée en base rank_track, audio_feature, temporal_feature automatiquement.
+*/
+CREATE OR REPLACE FUNCTION f_track_after_insert_postcreate()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.album_id IS NOT NULL THEN
+    PERFORM f_inc_album_tracks_count(NEW.album_id);
+  END IF;
+
+  -- créer rank_track si absent
+  INSERT INTO rank_track(track_id, rank_song_currency, rank_song_hotttnesss)
+  VALUES (NEW.track_id, 0, 0)
+  ON CONFLICT (track_id) DO NOTHING;
+
+  -- créer audio_feature si absent
+  INSERT INTO audio_feature(track_id) VALUES (NEW.track_id)
+  ON CONFLICT (track_id) DO NOTHING;
+
+  -- créer temporal_feature si absent
+  INSERT INTO temporal_feature(track_id) VALUES (NEW.track_id)
+  ON CONFLICT (track_id) DO NOTHING;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_track_after_insert_postcreate
+AFTER INSERT ON track
+FOR EACH ROW
+EXECUTE FUNCTION f_track_after_insert_postcreate();
+
+CREATE OR REPLACE FUNCTION f_track_before_delete_cleanup()
+RETURNS trigger AS $$
+BEGIN
+    -- Supprimer toutes les dépendances
+    DELETE FROM track_artist_main WHERE track_id = OLD.track_id;
+    DELETE FROM track_artist_feat WHERE track_id = OLD.track_id;
+    DELETE FROM track_license WHERE track_id = OLD.track_id;
+    DELETE FROM track_genre WHERE track_id = OLD.track_id;
+    DELETE FROM track_tag WHERE track_id = OLD.track_id;
+    DELETE FROM playlist_track WHERE track_id = OLD.track_id;
+    DELETE FROM track_user_like WHERE track_id = OLD.track_id;
+    DELETE FROM track_user_listen WHERE track_id = OLD.track_id;
+    DELETE FROM track_comment WHERE track_id = OLD.track_id;
+    DELETE FROM rank_track WHERE track_id = OLD.track_id;
+    DELETE FROM audio_feature WHERE track_id = OLD.track_id;
+    DELETE FROM temporal_feature WHERE track_id = OLD.track_id;
+
+    -- Décrémenter album_tracks_count
+    IF OLD.album_id IS NOT NULL THEN
+        PERFORM f_dec_album_tracks_count(OLD.album_id);
+    END IF;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+-- Créer le trigger BEFORE DELETE
+CREATE TRIGGER tr_track_before_delete_cleanup
+BEFORE DELETE ON track
+FOR EACH ROW
+EXECUTE FUNCTION f_track_before_delete_cleanup();
+
+
+/*
+  Trigger: empêcher suppression d'un album s'il contient des tracks
+*/
+CREATE OR REPLACE FUNCTION f_prevent_album_delete_if_tracks()
+RETURNS trigger AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM track WHERE album_id = OLD.album_id) THEN
+    RAISE EXCEPTION 'Impossible de supprimer l''album % : il contient des tracks.', OLD.album_id;
+  END IF;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_prevent_album_delete
+BEFORE DELETE ON album
+FOR EACH ROW
+EXECUTE FUNCTION f_prevent_album_delete_if_tracks();
+
+CREATE OR REPLACE FUNCTION f_track_assign_anonymous_if_no_main_artist_and_album_artists()
+RETURNS trigger AS $$
+DECLARE
+    anon_artist_id UUID;
+    has_artist BOOLEAN;
+BEGIN
+    -- Créer artiste anonyme s'il n'existe pas
+    SELECT account_id INTO anon_artist_id
+    FROM account
+    WHERE login = 'anonymous_artist';
+
+    IF anon_artist_id IS NULL THEN
+        INSERT INTO account(account_id, login, email, name)
+        VALUES (uuid_generate_v4(), 'anonymous_artist', 'anon@example.com', 'Anonymous Artist')
+        RETURNING account_id INTO anon_artist_id;
+    END IF;
+
+    -- Vérifier s'il existe un main artist pour le track
+    SELECT EXISTS(
+        SELECT 1 FROM track_artist_main tam
+        WHERE tam.track_id = NEW.track_id
+    ) INTO has_artist;
+
+    -- Vérifier si l'album a des artistes
+    IF NOT has_artist AND NOT EXISTS (
+        SELECT 1 FROM album_artist aa
+        WHERE aa.album_id = NEW.album_id
+    ) THEN
+        -- On peut maintenant ajouter le lien
+        INSERT INTO track_artist_main(track_id, artist_id)
+        VALUES (NEW.track_id, anon_artist_id);
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_track_assign_anonymous_if_no_main_artist_and_album_artists
+AFTER INSERT ON track
+FOR EACH ROW
+EXECUTE FUNCTION f_track_assign_anonymous_if_no_main_artist_and_album_artists();
+
+
+/*
+  Triggers pour likes : lorsque track_user_like est inséré/supprimé, on met à jour track.track_favorites
+*/
+CREATE OR REPLACE FUNCTION f_inc_track_favorites_on_like()
+RETURNS trigger AS $$
+BEGIN
+  UPDATE track SET track_favorites = COALESCE(track_favorites,0) + 1 WHERE track_id = NEW.track_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION f_dec_track_favorites_on_unlike()
+RETURNS trigger AS $$
+BEGIN
+  UPDATE track SET track_favorites = GREATEST(COALESCE(track_favorites,0) - 1, 0) WHERE track_id = OLD.track_id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_inc_track_favorites
+AFTER INSERT ON track_user_like
+FOR EACH ROW
+EXECUTE FUNCTION f_inc_track_favorites_on_like();
+
+CREATE TRIGGER tr_dec_track_favorites
+AFTER DELETE ON track_user_like
+FOR EACH ROW
+EXECUTE FUNCTION f_dec_track_favorites_on_unlike();
+
+/*
+  Triggers pour listens : incrémente track.track_listens quand on insère un écoute
+*/
+CREATE OR REPLACE FUNCTION f_inc_track_listens_on_listen()
+RETURNS trigger AS $$
+BEGIN
+  UPDATE track SET track_listens = COALESCE(track_listens,0) + 1 WHERE track_id = NEW.track_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_inc_track_listens
+AFTER INSERT ON track_user_listen
+FOR EACH ROW
+EXECUTE FUNCTION f_inc_track_listens_on_listen();
+
+/*
+  Triggers pour commentaires : insert/delete dans track_comment met à jour track.track_comments
+*/
+CREATE OR REPLACE FUNCTION f_inc_track_comments_on_comment()
+RETURNS trigger AS $$
+BEGIN
+  UPDATE track SET track_comments = COALESCE(track_comments,0) + 1 WHERE track_id = NEW.track_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION f_dec_track_comments_on_comment_delete()
+RETURNS trigger AS $$
+BEGIN
+  UPDATE track SET track_comments = GREATEST(COALESCE(track_comments,0) - 1,0) WHERE track_id = OLD.track_id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_inc_track_comments
+AFTER INSERT ON track_comment
+FOR EACH ROW
+EXECUTE FUNCTION f_inc_track_comments_on_comment();
+
+CREATE TRIGGER tr_dec_track_comments
+AFTER DELETE ON track_comment
+FOR EACH ROW
+EXECUTE FUNCTION f_dec_track_comments_on_comment_delete();
+
+/*
+  Trigger : créer automatiquement une playlist pour un user s'il n'en a aucune
+  On suppose que création se déclenche lorsqu'un like est ajouté (ex: user like first track).
+*/
+CREATE OR REPLACE FUNCTION f_create_playlist_if_none_for_user()
+RETURNS trigger AS $$
+DECLARE p_id UUID;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM playlist_user WHERE account_id = NEW.account_id) THEN
+    INSERT INTO playlist(playlist_name) VALUES ('My First Playlist') RETURNING playlist_id INTO p_id;
+    INSERT INTO playlist_user(playlist_id, account_id) VALUES (p_id, NEW.account_id);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_create_playlist_if_none
+AFTER INSERT ON track_user_like
+FOR EACH ROW
+EXECUTE FUNCTION f_create_playlist_if_none_for_user();
+
+/*
+  Trigger: création automatique de rank_artist quand un artist est ajouté
+*/
+CREATE OR REPLACE FUNCTION f_auto_create_rank_artist()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO rank_artist(artist_id, rank_artist_discovery, rank_artist_familiarity, rank_artist_hotttnesss)
+  VALUES (NEW.artist_id, 0, 0, 0)
+  ON CONFLICT (artist_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_auto_create_rank_artist
+AFTER INSERT ON artist
+FOR EACH ROW
+EXECUTE FUNCTION f_auto_create_rank_artist();
+
+/*
+  Trigger: update album_tracks_count when track is deleted (we have earlier function but safeguard)
+  (Already handled by f_track_after_delete_cleanup -> calls f_dec_album_tracks_count)
+*/
+
+/*
+  Trigger: mettre à jour les compteurs dérivés d’un artiste (favorites, comments…)
+  - artist_favorites = somme des track_favorites pour les tracks où il est main (ou feat selon choix)
+  - artist_comments = somme des track_comments pour les tracks où il est main (ou feat selon choix)
+*/
+CREATE OR REPLACE FUNCTION f_recompute_artist_counters(p_artist_id UUID)
+RETURNS void AS $$
+DECLARE fav_sum BIGINT;
+DECLARE com_sum BIGINT;
+BEGIN
+  -- somme des favorites des tracks où artist est main OR feat (on inclut les deux)
+  SELECT COALESCE(SUM(t.track_favorites),0) INTO fav_sum
+  FROM track t
+  WHERE EXISTS (SELECT 1 FROM track_artist_main tam WHERE tam.track_id = t.track_id AND tam.artist_id = p_artist_id)
+     OR EXISTS (SELECT 1 FROM track_artist_feat taf WHERE taf.track_id = t.track_id AND taf.artist_id = p_artist_id);
+
+  SELECT COALESCE(SUM(t.track_comments),0) INTO com_sum
+  FROM track t
+  WHERE EXISTS (SELECT 1 FROM track_artist_main tam WHERE tam.track_id = t.track_id AND tam.artist_id = p_artist_id)
+     OR EXISTS (SELECT 1 FROM track_artist_feat taf WHERE taf.track_id = t.track_id AND taf.artist_id = p_artist_id);
+
+  UPDATE artist
+  SET artist_favorites = fav_sum,
+      artist_comments = com_sum
+  WHERE artist_id = p_artist_id;
+END;
+$$ LANGUAGE plpgsql;
+
+/*
+  Appels triggers: lorsqu'une relation track_artist_main / track_artist_feat change,
+  ou lorsqu'un like/comment est inséré/supprimé sur un track, on recalculera l'artiste concerné.
+*/
+CREATE OR REPLACE FUNCTION f_after_track_artist_main_change()
+RETURNS trigger AS $$
+BEGIN
+  PERFORM f_recompute_artist_counters(NEW.artist_id);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_after_insert_track_artist_main
+AFTER INSERT ON track_artist_main
+FOR EACH ROW
+EXECUTE FUNCTION f_after_track_artist_main_change();
+
+CREATE OR REPLACE FUNCTION f_after_delete_track_artist_main()
+RETURNS trigger AS $$
+BEGIN
+  PERFORM f_recompute_artist_counters(OLD.artist_id);
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_after_delete_track_artist_main
+AFTER DELETE ON track_artist_main
+FOR EACH ROW
+EXECUTE FUNCTION f_after_delete_track_artist_main();
+
+-- même pour featured artists
+CREATE OR REPLACE FUNCTION f_after_track_artist_feat_change()
+RETURNS trigger AS $$
+BEGIN
+  PERFORM f_recompute_artist_counters(NEW.artist_id);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_after_insert_track_artist_feat
+AFTER INSERT ON track_artist_feat
+FOR EACH ROW
+EXECUTE FUNCTION f_after_track_artist_feat_change();
+
+CREATE OR REPLACE FUNCTION f_after_delete_track_artist_feat()
+RETURNS trigger AS $$
+BEGIN
+  PERFORM f_recompute_artist_counters(OLD.artist_id);
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_after_delete_track_artist_feat
+AFTER DELETE ON track_artist_feat
+FOR EACH ROW
+EXECUTE FUNCTION f_after_delete_track_artist_feat();
+
+-- lorsque les likes/comments changent, recalculer compteurs artiste(s) liés au track
+CREATE OR REPLACE FUNCTION f_after_like_change_recompute_artists()
+RETURNS trigger AS $$
+DECLARE v_track UUID := NEW.track_id;
+BEGIN
+  -- trouver artistes main et feat pour ce track et refresh
+  PERFORM f_recompute_artist_counters(artist_id) FROM track_artist_main WHERE track_id = v_track;
+  PERFORM f_recompute_artist_counters(artist_id) FROM track_artist_feat WHERE track_id = v_track;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_after_like_insert_recompute_artists
+AFTER INSERT ON track_user_like
+FOR EACH ROW
+EXECUTE FUNCTION f_after_like_change_recompute_artists();
+
+CREATE TRIGGER tr_after_like_delete_recompute_artists
+AFTER DELETE ON track_user_like
+FOR EACH ROW
+EXECUTE FUNCTION f_after_like_change_recompute_artists();
+
+-- pour les commentaires
+CREATE OR REPLACE FUNCTION f_after_comment_change_recompute_artists()
+RETURNS trigger AS $$
+DECLARE v_track UUID := NEW.track_id;
+BEGIN
+  PERFORM f_recompute_artist_counters(artist_id) FROM track_artist_main WHERE track_id = v_track;
+  PERFORM f_recompute_artist_counters(artist_id) FROM track_artist_feat WHERE track_id = v_track;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_after_comment_insert_recompute_artists
+AFTER INSERT ON track_comment
+FOR EACH ROW
+EXECUTE FUNCTION f_after_comment_change_recompute_artists();
+
+CREATE TRIGGER tr_after_comment_delete_recompute_artists
+AFTER DELETE ON track_comment
+FOR EACH ROW
+EXECUTE FUNCTION f_after_comment_change_recompute_artists();
+
+
+-- Fonction trigger
+CREATE OR REPLACE FUNCTION ensure_artist_account()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Vérifie si l'artist_id existe déjà dans account
+    IF NOT EXISTS (SELECT 1 FROM account WHERE account_id = NEW.artist_id) THEN
+        INSERT INTO account(account_id, login, email, name, created_at)
+        VALUES (
+            NEW.artist_id,
+            'artist_' || NEW.artist_id::text,
+            'artist_' || NEW.artist_id::text || '@example.com',  
+            'Artist_' || NEW.artist_id::text, 
+            CURRENT_TIMESTAMP
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger sur artist
+CREATE TRIGGER trg_ensure_artist_account
+BEFORE INSERT ON artist
+FOR EACH ROW
+EXECUTE FUNCTION ensure_artist_account();

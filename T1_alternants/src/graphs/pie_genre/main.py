@@ -93,7 +93,7 @@ def generate_pie_chart(plot_data: pd.Series, output_dir: Path) -> Path:
 
     # Titre
     plt.title(
-        "Stream Distribution by Genre\n(Using track_genre_top)",
+        "Stream Distribution by Genre\n(Using track_genre)",
         fontsize=18,
         weight="bold",
         pad=20,

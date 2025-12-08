@@ -253,14 +253,12 @@ ON CONFLICT DO NOTHING;
 WITH exploded AS (
     SELECT 
         new_uuid as track_uuid, 
-        jsonb_array_elements_text(replace(replace(track_genres, '[', '['''), ']', ''']')::jsonb) as genre_old_id
-        -- Handling [21] -> ["21"] for join
-        -- Actually, regex or simple text manipulation might be safer
-    FROM stg_track
+        trim(genre_old_id) as genre_old_id
+    FROM stg_track, unnest(parse_python_list(track_genres)) as genre_old_id
     WHERE track_genres IS NOT NULL AND track_genres != '[]'
 ),
 cleaned_ids AS (
-    SELECT track_uuid, trim(genre_old_id) as genre_old_id
+    SELECT track_uuid, genre_old_id
     FROM exploded
 )
 INSERT INTO track_genre (track_id, genre_id)

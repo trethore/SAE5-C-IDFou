@@ -1,6 +1,7 @@
+
+SET synchronous_commit = off;
 -- ====================================================================================
 -- POPULATE SCRIPT
--- Replicates logic from import_music.py using Staging Tables and Mapping
 -- ====================================================================================
 
 -- 1. Helper Functions
@@ -266,7 +267,7 @@ SELECT
     c.track_uuid, 
     m.new_uuid
 FROM cleaned_ids c
-JOIN _legacy_id_map m ON m.old_id = c.genre_old_id AND m.table_name = 'genre'
+JOIN _legacy_id_map m ON m.old_id = c.genre_old_id AND m.table_name = 'genre' JOIN track t ON t.track_id = c.track_uuid
 ON CONFLICT DO NOTHING;
 
 
@@ -302,8 +303,10 @@ ON CONFLICT DO NOTHING;
 -- Link Track Tags
 INSERT INTO track_tag (track_id, tag_id)
 SELECT DISTINCT t.new_uuid, tg.tag_id
-FROM stg_track t, unnest(parse_python_list(t.track_tags)) as tname
-JOIN tag tg ON tg.tag_name = trim(tname)
+FROM stg_track t
+CROSS JOIN LATERAL unnest(parse_python_list(t.track_tags)) as tname
+JOIN tag tg ON tg.tag_name = trim(tname) 
+JOIN track tr ON tr.track_id = t.new_uuid
 ON CONFLICT DO NOTHING;
 
 

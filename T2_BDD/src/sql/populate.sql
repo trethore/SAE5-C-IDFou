@@ -425,7 +425,7 @@ CREATE TEMP TABLE stg_user (
     account_uuid UUID DEFAULT uuid_generate_v4()
 );
 
-\copy stg_user FROM 'T1_alternants/src/clean/out/clean_answers.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
+\copy stg_user (created_at, has_consented, is_listening, frequency, context, "when", how, platform, utility, track_genre, duration, energy, tempo, feeling, is_live, quality, curiosity, age_range, gender, position) FROM 'T1_alternants/src/clean/out/clean_answers.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
 
 -- Insert Accounts
 INSERT INTO account (account_id, login, name, email, created_at)

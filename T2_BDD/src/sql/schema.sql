@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ------------------------------------------------
 -- DROP
 -- ------------------------------------------------
-DROP TABLE IF EXISTS account, artist, album, genre, track, audio_feature, temporal_feature, tag, playlist, rank_track, rank_artist, license, track_genre, track_tag, artist_tag, album_artist, track_artist_main, track_artist_feat, track_license, playlist_track, "user", preference, playlist_user, track_user_like, track_user_listen, track_comment CASCADE;
+DROP TABLE IF EXISTS account, artist, album, genre, track, audio_feature, temporal_feature, tag, playlist, rank_track, rank_artist, license, track_genre, track_tag, artist_tag, album_artist, track_artist_main, track_artist_feat, track_license, playlist_track, "user", preference, genre_preference, playlist_user, track_user_like, track_user_listen, track_comment CASCADE;
 
 -- ====================================================================================
 -- TABLES
@@ -404,18 +404,20 @@ CREATE TABLE playlist (
 
 CREATE TABLE rank_track (
     track_id UUID,
+    ranks_date TIMESTAMP DEFAULT NOW(),
     rank_song_currency BIGINT,
     rank_song_hotttnesss BIGINT,
-    PRIMARY KEY (track_id),
+    PRIMARY KEY (track_id, ranks_date),
     FOREIGN KEY (track_id) REFERENCES track(track_id)
 );
 
 CREATE TABLE rank_artist (
     artist_id UUID,
+    ranks_date TIMESTAMP DEFAULT NOW(),
     rank_artist_discovery BIGINT,
     rank_artist_familiarity BIGINT,
     rank_artist_hotttnesss BIGINT,
-    PRIMARY KEY (artist_id),
+    PRIMARY KEY (artist_id, ranks_date),
     FOREIGN KEY (artist_id) REFERENCES artist(artist_id)
 );
 
@@ -504,7 +506,7 @@ CREATE TABLE preference (
     position VARCHAR(255),
     has_consented BOOLEAN,
     is_listening BOOLEAN,
-    frequency INTEGER,
+    frequency VARCHAR(255),
     when_listening DOUBLE PRECISION,
     duration_pref INTEGER,
     energy_pref VARCHAR(255),
@@ -513,13 +515,20 @@ CREATE TABLE preference (
     is_live_pref VARCHAR(255),
     quality_pref INTEGER,
     curiosity_pref INTEGER,
-    context INTEGER,
+    context VARCHAR(255),
     how VARCHAR(255),
     platform VARCHAR(255),
     utility VARCHAR(255),
-    track_genre VARCHAR(255),
     PRIMARY KEY (account_id),
     FOREIGN KEY (account_id) REFERENCES "user"(account_id)
+);
+
+CREATE TABLE genre_preference (
+    account_id UUID,
+    genre_id UUID,
+    PRIMARY KEY (account_id, genre_id),
+    FOREIGN KEY (account_id) REFERENCES preference(account_id),
+    FOREIGN KEY (genre_id) REFERENCES genre(genre_id)
 );
 
 CREATE TABLE playlist_user (
@@ -541,11 +550,11 @@ CREATE TABLE track_user_like (
 CREATE TABLE track_user_listen (
     track_id UUID,
     account_id UUID,
-    PRIMARY KEY (track_id, account_id),
+    count INTEGER DEFAULT 1,
+    PRIMARY KEY (track_id, account_id), 
     FOREIGN KEY (track_id) REFERENCES track(track_id),
     FOREIGN KEY (account_id) REFERENCES "user"(account_id)
 );
-
 
 CREATE TABLE track_comment (
     comment_id UUID DEFAULT uuid_generate_v4(),
@@ -672,7 +681,13 @@ SELECT
     rt.rank_song_currency,
     rt.rank_song_hotttnesss
 FROM track t
-LEFT JOIN rank_track rt ON rt.track_id = t.track_id;
+LEFT JOIN LATERAL (
+    SELECT rank_song_currency, rank_song_hotttnesss
+    FROM rank_track
+    WHERE track_id = t.track_id
+    ORDER BY ranks_date DESC
+    LIMIT 1
+) rt ON true;
 
 CREATE OR REPLACE VIEW v_artist_popularity AS
 SELECT
@@ -684,7 +699,13 @@ SELECT
     ra.rank_artist_familiarity,
     ra.rank_artist_hotttnesss
 FROM artist ar
-LEFT JOIN rank_artist ra ON ra.artist_id = ar.artist_id;
+LEFT JOIN LATERAL (
+    SELECT rank_artist_discovery, rank_artist_familiarity, rank_artist_hotttnesss
+    FROM rank_artist
+    WHERE artist_id = ar.artist_id
+    ORDER BY ranks_date DESC
+    LIMIT 1
+) ra ON true;
 
 CREATE OR REPLACE VIEW v_user_playlists AS
 SELECT
@@ -738,7 +759,10 @@ SELECT
     p.how,
     p.platform,
     p.utility,
-    p.track_genre
+    (SELECT json_agg(g.title) 
+     FROM genre_preference gp 
+     JOIN genre g ON g.genre_id = gp.genre_id 
+     WHERE gp.account_id = u.account_id) AS track_genres
 FROM "user" u
 LEFT JOIN account a ON a.account_id = u.account_id
 LEFT JOIN preference p ON p.account_id = u.account_id;
@@ -755,7 +779,13 @@ SELECT
     t.track_favorites
 FROM track t
 LEFT JOIN audio_feature af ON af.track_id = t.track_id
-LEFT JOIN rank_track rt ON rt.track_id = t.track_id;
+LEFT JOIN LATERAL (
+    SELECT rank_song_hotttnesss
+    FROM rank_track
+    WHERE track_id = t.track_id
+    ORDER BY ranks_date DESC
+    LIMIT 1
+) rt ON true;
 
 CREATE OR REPLACE VIEW v_entity_tags AS
 SELECT 'track' AS entity_type, tt.track_id AS entity_id, tg.tag_id, tg.tag_name 
@@ -853,8 +883,7 @@ BEGIN
 
   -- créer rank_track si absent
   INSERT INTO rank_track(track_id, rank_song_currency, rank_song_hotttnesss)
-  VALUES (NEW.track_id, 0, 0)
-  ON CONFLICT (track_id) DO NOTHING;
+  VALUES (NEW.track_id, 0, 0);
 
   -- créer audio_feature si absent
   INSERT INTO audio_feature(track_id) VALUES (NEW.track_id)
@@ -926,47 +955,7 @@ BEFORE DELETE ON album
 FOR EACH ROW
 EXECUTE FUNCTION f_prevent_album_delete_if_tracks();
 
-CREATE OR REPLACE FUNCTION f_track_assign_anonymous_if_no_main_artist_and_album_artists()
-RETURNS trigger AS $$
-DECLARE
-    anon_artist_id UUID;
-    has_artist BOOLEAN;
-BEGIN
-    -- Créer artiste anonyme s'il n'existe pas
-    SELECT account_id INTO anon_artist_id
-    FROM account
-    WHERE login = 'anonymous_artist';
 
-    IF anon_artist_id IS NULL THEN
-        INSERT INTO account(account_id, login, email, name)
-        VALUES (uuid_generate_v4(), 'anonymous_artist', 'anon@example.com', 'Anonymous Artist')
-        RETURNING account_id INTO anon_artist_id;
-    END IF;
-
-    -- Vérifier s'il existe un main artist pour le track
-    SELECT EXISTS(
-        SELECT 1 FROM track_artist_main tam
-        WHERE tam.track_id = NEW.track_id
-    ) INTO has_artist;
-
-    -- Vérifier si l'album a des artistes
-    IF NOT has_artist AND NOT EXISTS (
-        SELECT 1 FROM album_artist aa
-        WHERE aa.album_id = NEW.album_id
-    ) THEN
-        -- On peut maintenant ajouter le lien
-        INSERT INTO track_artist_main(track_id, artist_id)
-        VALUES (NEW.track_id, anon_artist_id);
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER tr_track_assign_anonymous_if_no_main_artist_and_album_artists
-AFTER INSERT ON track
-FOR EACH ROW
-EXECUTE FUNCTION f_track_assign_anonymous_if_no_main_artist_and_album_artists();
 
 
 /*
@@ -1071,8 +1060,7 @@ CREATE OR REPLACE FUNCTION f_auto_create_rank_artist()
 RETURNS trigger AS $$
 BEGIN
   INSERT INTO rank_artist(artist_id, rank_artist_discovery, rank_artist_familiarity, rank_artist_hotttnesss)
-  VALUES (NEW.artist_id, 0, 0, 0)
-  ON CONFLICT (artist_id) DO NOTHING;
+  VALUES (NEW.artist_id, 0, 0, 0);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -1241,3 +1229,17 @@ CREATE TRIGGER trg_ensure_artist_account
 BEFORE INSERT ON artist
 FOR EACH ROW
 EXECUTE FUNCTION ensure_artist_account();
+
+-- ====================================================================================
+-- Additional Functions
+-- ====================================================================================
+
+CREATE OR REPLACE FUNCTION increment_listen_count(p_account_id UUID, p_track_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    INSERT INTO track_user_listen (account_id, track_id, count)
+    VALUES (p_account_id, p_track_id, 1)
+    ON CONFLICT (track_id, account_id)
+    DO UPDATE SET count = track_user_listen.count + 1;
+END;
+$$ LANGUAGE plpgsql;

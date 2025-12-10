@@ -3,10 +3,6 @@
 # Usage: ./T2_BDD/src/scripts/populate_db.sh
 
 # Database connection parameters
-DB_NAME=${DB_NAME:-sae5idfou}
-DB_USER=${DB_USER:-idfou}
-
-echo "Populating database '$DB_NAME'..."
 
 # Ensure we are in the project root to find CSV files
 if [ ! -d "T1_analyse_de_donnees" ]; then
@@ -31,7 +27,13 @@ fi
 
 echo "Populating database '$DB_NAME'..."
 
-PGPASSWORD="${DB_ROOT_PASSWORD}" psql -h localhost -p "${PGDB_PORT:-5432}" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f T2_BDD/src/sql/populate.sql
+# Check if container is running
+if [ -z "$(docker ps -q -f name=sae5db)" ]; then
+    echo "Error: Container 'sae5db' is not running. Please start it with 'docker-compose up -d'."
+    exit 1
+fi
+
+docker exec -e PGPASSWORD="${DB_ROOT_PASSWORD}" -w /app sae5db psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f T2_BDD/src/sql/populate.sql
 
 if [ $? -eq 0 ]; then
     echo "Database populated successfully."

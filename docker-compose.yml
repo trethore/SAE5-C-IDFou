@@ -4,6 +4,7 @@ services:
     image: postgres:18.0
     volumes:
       - ./data/postgres:/var/lib/postgresql/18/docker
+      - .:/app
     ports:
       - 0.0.0.0:${PGDB_PORT}:5432
     environment:

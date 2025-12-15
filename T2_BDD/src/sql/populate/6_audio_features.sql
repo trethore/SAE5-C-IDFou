@@ -38,7 +38,12 @@ JOIN _legacy_id_map m ON m.old_id = s.track_id AND m.table_name = 'track'
 ON CONFLICT (track_id) DO UPDATE SET 
     acousticness = EXCLUDED.acousticness,
     danceability = EXCLUDED.danceability,
-    energy = EXCLUDED.energy;
+    energy = EXCLUDED.energy,
+    instrumentalness = EXCLUDED.instrumentalness,
+    liveness = EXCLUDED.liveness,
+    speechiness = EXCLUDED.speechiness,
+    tempo = EXCLUDED.tempo,
+    valence = EXCLUDED.valence;
 
 -- Update Ranks (using the ranks logic)
 -- rank_track

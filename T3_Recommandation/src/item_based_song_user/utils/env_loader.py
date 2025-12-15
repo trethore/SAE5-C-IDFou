@@ -7,9 +7,10 @@ def load_env_file():
     """
     
     current_dir = os.path.dirname(os.path.abspath(__file__)) # utils
-    src_dir = os.path.dirname(current_dir) # src
-    t3_dir = os.path.dirname(src_dir) # T3
-    project_root = os.path.dirname(t3_dir) # root
+    item_based_dir = os.path.dirname(current_dir) # item_based_song_user
+    src_dir = os.path.dirname(item_based_dir) # src
+    t3_dir = os.path.dirname(src_dir) # T3_Recommandation
+    project_root = os.path.dirname(t3_dir) # SAE5-C-IDFou (Root)
     
     env_path = os.path.join(project_root, '.env')
     

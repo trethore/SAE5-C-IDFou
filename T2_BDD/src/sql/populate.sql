@@ -1,4 +1,4 @@
--- Entrypoint populate script; executes staged imports
+-- Point d'entree du script populate ; execute les imports en etapes
 \i T2_BDD/src/sql/populate/0_settings_helpers.sql
 \i T2_BDD/src/sql/populate/1_genres.sql
 \i T2_BDD/src/sql/populate/2_artists.sql

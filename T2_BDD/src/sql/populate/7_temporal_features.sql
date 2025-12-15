@@ -1,5 +1,5 @@
 -- ====================================================================================
--- TEMPORAL FEATURES (clean_features.csv)
+-- CARACTERISTIQUES TEMPORELLES
 -- ====================================================================================
 CREATE TEMP TABLE stg_features (
     track_id TEXT,
@@ -525,7 +525,7 @@ CREATE TEMP TABLE stg_features (
 
 \copy stg_features FROM 'T1_analyse_de_donnees/cleaned_data/clean_features.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
 
--- Add missing destination columns dynamically (strip dots)
+-- Ajouter dynamiquement les colonnes de destination manquantes
 DO $$
 DECLARE
   rec record;
@@ -545,7 +545,6 @@ BEGIN
   END LOOP;
 END$$;
 
--- Build and execute the upsert dynamically to keep the script short
 DO $$
 DECLARE
   col_list text;

@@ -1,5 +1,5 @@
 -- ====================================================================================
--- ARTIST
+-- ARTISTE
 -- ====================================================================================
 CREATE TEMP TABLE stg_artist (
     artist_id TEXT,
@@ -22,7 +22,7 @@ CREATE TEMP TABLE stg_artist (
 
 ALTER TABLE stg_artist ADD COLUMN new_uuid UUID DEFAULT uuid_generate_v4();
 
--- Create Accounts for Artists
+-- Creer des comptes pour les artistes
 INSERT INTO account (account_id, login, name, email, created_at)
 SELECT 
     new_uuid, 
@@ -32,7 +32,7 @@ SELECT
     NOW()
 FROM stg_artist;
 
--- Insert Artists
+-- Inserer les artistes
 INSERT INTO artist (
     artist_id, artist_bio, artist_location, artist_latitude, artist_longitude, 
     artist_active_year_begin, artist_active_year_end, artist_favorites, artist_comments

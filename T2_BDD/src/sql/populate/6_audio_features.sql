@@ -1,5 +1,5 @@
 -- ====================================================================================
--- AUDIO FEATURES & RANKS (clean_echonest.csv)
+-- CARACTERISTIQUES AUDIO ET CLASSEMENTS
 -- ====================================================================================
 CREATE TEMP TABLE stg_echonest (
     track_id TEXT,
@@ -25,7 +25,7 @@ CREATE TEMP TABLE stg_echonest (
 
 \copy stg_echonest FROM 'T1_analyse_de_donnees/cleaned_data/clean_echonest.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
 
--- Insert Audio Features
+-- Inserer les caracteristiques audio
 INSERT INTO audio_feature (
     track_id, acousticness, danceability, energy, instrumentalness, 
     liveness, speechiness, tempo, valence
@@ -45,8 +45,7 @@ ON CONFLICT (track_id) DO UPDATE SET
     tempo = EXCLUDED.tempo,
     valence = EXCLUDED.valence;
 
--- Update Ranks (using the ranks logic)
--- rank_track
+-- Mettre a jour les rangs
 INSERT INTO rank_track (track_id, rank_song_currency, rank_song_hotttnesss)
 SELECT 
     m.new_uuid, 
@@ -54,10 +53,9 @@ SELECT
     CAST(s.song_hotttnesss_rank AS BIGINT)
 FROM stg_echonest s
 JOIN _legacy_id_map m ON m.old_id = s.track_id AND m.table_name = 'track'
-ON CONFLICT DO NOTHING; -- or update if exists, logic allows multiple dates now
+ON CONFLICT DO NOTHING;
 
--- rank_artist (derived from echonest, associated with track's artist)
--- Need to find artist for the track
+-- rank_artist
 INSERT INTO rank_artist (artist_id, rank_artist_discovery, rank_artist_familiarity, rank_artist_hotttnesss)
 SELECT DISTINCT
     ta.artist_id,

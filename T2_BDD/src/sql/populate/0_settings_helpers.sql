@@ -1,9 +1,9 @@
 SET synchronous_commit = off;
 -- ====================================================================================
--- HELPERS & MAPPINGS
+-- HELPERS
 -- ====================================================================================
 
--- 1. Helper Functions
+-- 1. Fonctions utilitaires
 CREATE OR REPLACE FUNCTION parse_python_list(p_text TEXT) RETURNS TEXT[] AS $$
 DECLARE
     clean_text TEXT;
@@ -14,34 +14,31 @@ BEGIN
     
     clean_text := p_text;
     
-    -- Handle double-escaped quotes often found in CSV dumps of python lists: ["\"val\""]
+    -- Gerer les guillemets doubles echappes souvent vus dans les CSV de listes python
     IF position('""' IN clean_text) > 0 THEN
         clean_text := replace(clean_text, '""', '"');
     END IF;
 
-    -- Replace Python-style single quotes with double quotes for JSON parsing
-    -- Only if it starts with [ and '
+    -- Remplacer les quotes simples facon Python par des doubles pour parser en JSON
     IF left(clean_text, 2) = '[''' THEN
          clean_text := replace(clean_text, '''', '"');
     END IF;
     
-    -- Fallback for simple ' -> " replacement if not covered above but still looks like list
     IF left(clean_text, 1) = '[' AND position('''' IN clean_text) > 0 AND position('"' IN clean_text) = 0 THEN
          clean_text := replace(clean_text, '''', '"');
     END IF;
 
-    -- If it looks like JSON now, try to parse
+    -- Si cela ressemble a du JSON on le parse
     BEGIN
         RETURN ARRAY(SELECT jsonb_array_elements_text(clean_text::jsonb));
     EXCEPTION WHEN OTHERS THEN
-        -- Fallback: basic string splitting if JSON fails. 
-        -- Removes brackets and quotes for simple CSV-like parsing
+        -- Retire crochets et guillemets
         RETURN string_to_array(replace(replace(replace(trim(both '[]' from p_text), '''', ''), '"', ''), ', ', ','), ',');
     END;
 END;
 $$ LANGUAGE plpgsql;
 
--- 2. Mapping Table for Legacy IDs
+-- 2. Table de correspondance id -> uuid
 CREATE TEMP TABLE _legacy_id_map (
     table_name TEXT,
     old_id TEXT,

@@ -1,5 +1,5 @@
 -- ====================================================================================
--- TRACK
+-- PISTE
 -- ====================================================================================
 CREATE TEMP TABLE stg_track (
     track_id TEXT,
@@ -51,7 +51,7 @@ SELECT 'track', t.track_id, t.new_uuid
 FROM stg_track t
 JOIN _legacy_id_map m_art ON m_art.old_id = t.artist_id AND m_art.table_name = 'artist';
 
--- Link Track -> Artist (Main)
+-- Lier piste -> artiste
 INSERT INTO track_artist_main (track_id, artist_id)
 SELECT 
     t.new_uuid, 
@@ -59,7 +59,7 @@ SELECT
 FROM stg_track t
 JOIN _legacy_id_map m_art ON m_art.old_id = t.artist_id AND m_art.table_name = 'artist';
 
--- Link Album -> Artist (Derived from Tracks)
+-- Lier album -> artiste
 INSERT INTO album_artist (album_id, artist_id)
 SELECT DISTINCT 
     m_alb.new_uuid, 
@@ -69,7 +69,7 @@ JOIN _legacy_id_map m_alb ON m_alb.old_id = t.album_id AND m_alb.table_name = 'a
 JOIN _legacy_id_map m_art ON m_art.old_id = t.artist_id AND m_art.table_name = 'artist'
 ON CONFLICT DO NOTHING;
 
--- Track -> Genres
+-- Piste -> genres
 WITH exploded AS (
     SELECT 
         new_uuid as track_uuid, 

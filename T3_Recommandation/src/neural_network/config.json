@@ -1,0 +1,11 @@
+{
+  "training": {
+    "epochs": 5,
+    "batch_size": 512,
+    "lr": 0.001,
+    "hidden_dim": 256,
+    "dropout": 0.1,
+    "top_k_genres": 50,
+    "top_k_tags": 200
+  }
+}

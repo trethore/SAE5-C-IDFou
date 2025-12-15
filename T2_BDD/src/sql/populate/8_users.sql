@@ -61,7 +61,6 @@ SELECT
 FROM stg_user;
 
 -- Preference de genre
--- CSV : track_genre = "['pop', 'rap']"
 WITH user_genres AS (
     SELECT 
         account_uuid,

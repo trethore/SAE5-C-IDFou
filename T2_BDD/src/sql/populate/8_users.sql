@@ -53,7 +53,7 @@ INSERT INTO preference (
 )
 SELECT
     account_uuid, age_range, gender, position, 
-    (has_consented IS NOT NULL)::boolean, 
+    (has_consented = 'True')::boolean, 
     (is_listening = 'True')::boolean,
     frequency, "when", CAST(duration AS INT), energy, tempo,
     feeling, is_live, CAST(quality AS INT), CAST(curiosity AS INT), context,

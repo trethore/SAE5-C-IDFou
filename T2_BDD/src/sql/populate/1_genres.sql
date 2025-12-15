@@ -12,18 +12,6 @@ CREATE TEMP TABLE stg_genre (
 \copy stg_genre FROM 'T1_analyse_de_donnees/cleaned_data/clean_genres.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
 
 -- Insert and Map
-WITH inserted AS (
-    INSERT INTO genre (title, top_level)
-    SELECT title, top_level FROM stg_genre
-    RETURNING genre_id, title
-)
-INSERT INTO _legacy_id_map (table_name, old_id, new_uuid)
-SELECT 'genre', s.genre_id, i.genre_id
-FROM stg_genre s
-JOIN inserted i ON i.title = s.title;
-
-TRUNCATE TABLE _legacy_id_map;
-
 ALTER TABLE stg_genre ADD COLUMN new_uuid UUID DEFAULT uuid_generate_v4();
 
 INSERT INTO genre (genre_id, title, top_level)

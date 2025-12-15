@@ -75,12 +75,14 @@ def get_all_tracks_data():
             -- Textual
             COALESCE(tg.genres, '') as genres,
             COALESCE(tt.tags, '') as tags,
-            COALESCE(ta.artists, '') as artists
+            COALESCE(ta.artists, '') as artists,
+            COALESCE(alb.album_title, '') as album_title
         FROM track t
         JOIN temporal_feature tf ON tf.track_id = t.track_id
         LEFT JOIN track_genres tg ON tg.track_id = t.track_id
         LEFT JOIN track_tags tt ON tt.track_id = t.track_id
-        LEFT JOIN track_artists ta ON ta.track_id = t.track_id;
+        LEFT JOIN track_artists ta ON ta.track_id = t.track_id
+        LEFT JOIN album alb ON alb.album_id = t.album_id;
         """
         
         df = pd.read_sql_query(optimized_query, conn)

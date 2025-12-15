@@ -16,18 +16,18 @@ from utils.env_loader import load_env_file
 
 def recommend_tracks(user_id, n_recommendations=10):
     load_env_file()
-    print(f"Starting recommendation for User: {user_id}")
+    print(f"Starting recommendation (Mk2 - Text + Audio) for User: {user_id}")
     
     # 1. Load Data
     print("Loading user history...")
-    user_history = get_user_listen_history(user_id) # returns dict {track_id: count}
+    user_history = get_user_listen_history(user_id)
     listened_track_ids = set(user_history.keys())
     print(f"User has listened to {len(listened_track_ids)} tracks.")
     
     if not listened_track_ids:
         print("User has no listening history. Cannot compute item-based recommendations.")
         return []
-    
+
     print("Loading all tracks data...")
     tracks_df = get_all_tracks_data()
     print(f"Loaded {len(tracks_df)} tracks from database.")
@@ -38,7 +38,6 @@ def recommend_tracks(user_id, n_recommendations=10):
         
     # 2. Prepare Features
     print("Vectorizing features...")
-    # Now returns a dict of matrices and the index
     feature_matrices, track_index = prepare_features(tracks_df)
     
     if not feature_matrices:
@@ -55,14 +54,12 @@ def recommend_tracks(user_id, n_recommendations=10):
     # 3. Create User Profile & Compute Similarity per Component
     print("Computing similarities per component...")
     
-    # Define components to use for Mk1 (Text/Metadata only)
-    components = ['genres', 'tags', 'artists', 'albums', 'titles']
+    # Mk2: Include Audio
+    components = ['genres', 'tags', 'artists', 'albums', 'titles', 'audio']
     valid_components = []
     
-    # Store similarities for each component
     component_similarities = []
     
-    # Identify user indices and weights once
     user_indices = []
     weights = []
     for tid, count in user_history.items():
@@ -74,7 +71,6 @@ def recommend_tracks(user_id, n_recommendations=10):
         print("None of the user's listened tracks are in the features database.")
         return []
         
-    # Normalize weights
     weights = np.array(weights)
     weights = weights / weights.sum()
     
@@ -85,24 +81,27 @@ def recommend_tracks(user_id, n_recommendations=10):
             
         print(f"  Processing {comp}...")
         
-        # Get user vectors for this component
         user_track_vectors = matrix[user_indices]
         
-        # Weighted Average Profile
-        # sparse matrix * weights requires conversion or dot product
-        # user_track_vectors is (n_samples, n_features)
-        # weights is (n_samples,)
-        # We want (1, n_features)
-        
         # Safe dot product for sparse
-        user_profile = user_track_vectors.T.dot(weights) # result is (n_features,)
-        user_profile = user_profile.reshape(1, -1)
-        
-        # Compute Cosine Similarity
-        # (1, F) vs (N, F) -> (1, N)
-        sim = cosine_similarity(user_profile, matrix).flatten()
-        component_similarities.append(sim)
-        valid_components.append(comp)
+        try:
+            # Check if sparse
+            if hasattr(user_track_vectors, 'toarray') or hasattr(user_track_vectors, 'dot'):
+                 # Transpose (n_samples, n_features) -> (n_features, n_samples) to dot with weights (n_samples,)
+                 user_profile = user_track_vectors.T.dot(weights)
+            else:
+                 # Dense numpy
+                 user_profile = np.average(user_track_vectors, axis=0, weights=weights)
+                 
+            user_profile = user_profile.reshape(1, -1)
+            
+            sim = cosine_similarity(user_profile, matrix).flatten()
+            component_similarities.append(sim)
+            valid_components.append(comp)
+            
+        except Exception as e:
+            print(f"  Error processing {comp}: {e}")
+            continue
 
     if not component_similarities:
         print("No valid feature components found.")
@@ -110,7 +109,7 @@ def recommend_tracks(user_id, n_recommendations=10):
         
     # 4. Average Similarity
     print(f"Averaging scores from: {', '.join(valid_components)}")
-    final_similarity = np.mean(component_similarities, axis=0) # Average across components
+    final_similarity = np.mean(component_similarities, axis=0)
     
     # 5. Rank and Filter
     sorted_indices = final_similarity.argsort()[::-1]
@@ -121,13 +120,10 @@ def recommend_tracks(user_id, n_recommendations=10):
     for idx in sorted_indices:
         track_id = tracks_index_list[idx]
         
-        # Filter: Exclude tracks already listened to
         if track_id in listened_track_ids:
             continue
             
         score = final_similarity[idx]
-        # Retrieve metadata
-        # tracks_df index is track_id
         track_info = tracks_df.loc[track_id]
         
         rec = {
@@ -145,7 +141,7 @@ def recommend_tracks(user_id, n_recommendations=10):
     return recommendations
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Item-Based Music Recommendation Mk1")
+    parser = argparse.ArgumentParser(description="Item-Based Music Recommendation Mk2 (Audio)")
     parser.add_argument("user_id", type=str, help="UUID of the user")
     parser.add_argument("--n", type=int, default=10, help="Number of recommendations")
     
@@ -155,7 +151,7 @@ if __name__ == "__main__":
         recs = recommend_tracks(args.user_id, args.n)
         
         print("\n" + "="*50)
-        print(f"Top {len(recs)} Recommendations for User {args.user_id}")
+        print(f"Top {len(recs)} Recommendations (Mk2) for User {args.user_id}")
         print("="*50)
         
         for i, rec in enumerate(recs, 1):

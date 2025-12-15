@@ -20,13 +20,9 @@ WITH inserted AS (
 INSERT INTO _legacy_id_map (table_name, old_id, new_uuid)
 SELECT 'genre', s.genre_id, i.genre_id
 FROM stg_genre s
-JOIN inserted i ON i.title = s.title; -- assuming title uniqueness for mapping or row order? 
--- Title might not be unique. Better approach: Use a DO block or function if title not unique. 
--- But strictly, we can't link back easily without a temporary key.
--- Since we are in a transaction, we can add a temp column to 'genre' or rely on order? No rely on order is risky.
--- Alternative: Generate UUIDs in staging first.
+JOIN inserted i ON i.title = s.title;
 
-TRUNCATE TABLE _legacy_id_map; -- Start over with better approach
+TRUNCATE TABLE _legacy_id_map;
 
 ALTER TABLE stg_genre ADD COLUMN new_uuid UUID DEFAULT uuid_generate_v4();
 

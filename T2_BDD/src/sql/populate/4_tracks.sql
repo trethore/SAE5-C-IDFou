@@ -69,8 +69,7 @@ JOIN _legacy_id_map m_alb ON m_alb.old_id = t.album_id AND m_alb.table_name = 'a
 JOIN _legacy_id_map m_art ON m_art.old_id = t.artist_id AND m_art.table_name = 'artist'
 ON CONFLICT DO NOTHING;
 
--- Link Track -> Genres (List parsing)
--- track_genres is like '[21, 3]'
+-- Track -> Genres
 WITH exploded AS (
     SELECT 
         new_uuid as track_uuid, 

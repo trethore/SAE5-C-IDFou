@@ -3,7 +3,7 @@
 -- ====================================================================================
 
 /*
-  Helper: fonction pour incrémenter album_tracks_count (utilisée par triggers insert/delete)
+  Helper: fonction pour incrementer album_tracks_count
 */
 CREATE OR REPLACE FUNCTION f_inc_album_tracks_count(p_album_id UUID)
 RETURNS void AS $$
@@ -15,7 +15,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Helper: fonction pour décrémenter album_tracks_count
+  Helper: fonction pour decrementer album_tracks_count
 */
 CREATE OR REPLACE FUNCTION f_dec_album_tracks_count(p_album_id UUID)
 RETURNS void AS $$
@@ -41,7 +41,7 @@ BEGIN
     RETURNING album_id INTO created_album_id;
 
     NEW.album_id := created_album_id;
-    -- set counters on track (initial)
+    -- set counters on track
     NEW.track_listens := COALESCE(NEW.track_listens, 0);
     NEW.track_favorites := COALESCE(NEW.track_favorites, 0);
     NEW.track_comments := COALESCE(NEW.track_comments, 0);
@@ -58,15 +58,12 @@ BEGIN
     PERFORM f_inc_album_tracks_count(NEW.album_id);
   END IF;
 
-  -- créer rank_track si absent
   INSERT INTO rank_track(track_id, rank_song_currency, rank_song_hotttnesss)
   VALUES (NEW.track_id, 0, 0);
 
-  -- créer audio_feature si absent
   INSERT INTO audio_feature(track_id) VALUES (NEW.track_id)
   ON CONFLICT (track_id) DO NOTHING;
 
-  -- créer temporal_feature si absent
   INSERT INTO temporal_feature(track_id) VALUES (NEW.track_id)
   ON CONFLICT (track_id) DO NOTHING;
 
@@ -101,7 +98,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Trigger: empêcher suppression d'un album s'il contient des tracks
+  Trigger: empecher suppression d'un album s'il contient des tracks
 */
 CREATE OR REPLACE FUNCTION f_prevent_album_delete_if_tracks()
 RETURNS trigger AS $$
@@ -133,7 +130,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Triggers pour listens : incrémente track.track_listens quand on insère un écoute
+  Triggers pour listens : incremente track.track_listens quand on insère un ecoute
 */
 CREATE OR REPLACE FUNCTION f_inc_track_listens_on_listen()
 RETURNS trigger AS $$
@@ -179,7 +176,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Trigger: création automatique de rank_artist quand un artist est ajouté
+  Trigger: creation automatique de rank_artist quand un artist est ajoute
 */
 CREATE OR REPLACE FUNCTION f_auto_create_rank_artist()
 RETURNS trigger AS $$
@@ -190,16 +187,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/*
-  Trigger: update album_tracks_count when track is deleted (we have earlier function but safeguard)
-  (Already handled by f_track_after_delete_cleanup -> calls f_dec_album_tracks_count)
-*/
-
-/*
-  Trigger: mettre à jour les compteurs dérivés d’un artiste (favorites, comments…)
-  - artist_favorites = somme des track_favorites pour les tracks où il est main (ou feat selon choix)
-  - artist_comments = somme des track_comments pour les tracks où il est main (ou feat selon choix)
-*/
 CREATE OR REPLACE FUNCTION f_recompute_artist_counters(p_artist_id UUID)
 RETURNS void AS $$
 DECLARE fav_sum BIGINT;

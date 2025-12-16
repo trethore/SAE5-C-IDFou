@@ -69,13 +69,21 @@ def train_loop(
 ):
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode="min",
-        factor=lr_factor,
-        patience=lr_patience,
-        verbose=False,
-    )
+    try:
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode="min",
+            factor=lr_factor,
+            patience=lr_patience,
+            verbose=False,
+        )
+    except TypeError:
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode="min",
+            factor=lr_factor,
+            patience=lr_patience,
+        )
     best_state = None
     best_val = float("inf")
     history: List[Dict] = []

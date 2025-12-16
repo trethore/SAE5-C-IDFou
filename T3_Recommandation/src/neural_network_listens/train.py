@@ -67,7 +67,7 @@ def train_loop(
     lr_factor: float = 0.5,
     lr_patience: int = 3,
 ):
-    criterion = torch.nn.MSELoss()
+    criterion = torch.nn.SmoothL1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     try:
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -99,6 +99,7 @@ def train_loop(
             preds = model(xb)
             loss = criterion(preds, yb)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             total += loss.item() * xb.size(0)
             n += xb.size(0)
@@ -130,6 +131,8 @@ def save_artifacts(
     input_dim: int,
     best_val: float,
     history: List[Dict],
+    target_log_min: float,
+    target_log_max: float,
 ):
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -139,6 +142,8 @@ def save_artifacts(
             "config": config,
             "input_dim": input_dim,
             "best_val": best_val,
+            "target_log_min": target_log_min,
+            "target_log_max": target_log_max,
         },
         artifacts_dir / "model.pt",
     )
@@ -147,6 +152,8 @@ def save_artifacts(
         "epochs": len(history),
         "history": history,
         "input_dim": input_dim,
+        "target_log_min": target_log_min,
+        "target_log_max": target_log_max,
     }
     with open(artifacts_dir / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
@@ -176,7 +183,10 @@ def main():
     prep_train = prepare_features(tracks_train)
     X_train_full, y_train_full = prep_train.X, prep_train.y
 
-    # Securite : remplacement des valeurs non finies restantes
+    target_log_min = float(np.min(y_train_full))
+    target_log_max = float(np.max(y_train_full))
+
+    # remplacement des valeurs non finies restantes
     X_train_full = np.nan_to_num(X_train_full, nan=0.0, posinf=0.0, neginf=0.0)
     y_train_full = np.nan_to_num(y_train_full, nan=0.0, posinf=0.0, neginf=0.0)
 
@@ -223,6 +233,8 @@ def main():
         input_dim=X_train.shape[1],
         best_val=best_val,
         history=history,
+        target_log_min=target_log_min,
+        target_log_max=target_log_max,
     )
 
     print(f"Modele enregistre dans {artifacts_dir / 'model.pt'}")

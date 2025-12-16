@@ -34,6 +34,8 @@ def main():
 
     checkpoint = torch.load(ckpt_path, map_location="cpu")
     meta = meta_from_dict(checkpoint["meta"])
+    target_log_min = float(checkpoint.get("target_log_min", 0.0))
+    target_log_max = float(checkpoint.get("target_log_max", np.inf))
     hidden_dims = train_cfg["hidden_dims"]
     dropout = train_cfg["dropout"]
 
@@ -68,6 +70,8 @@ def main():
         for xb, yb in test_loader:
             xb = xb.to(device)
             pred = model(xb).cpu().numpy()
+            # on clip pour s'assurer de rester dans les bornes vues pendant l'entrainement et eviter les valeurs extremes
+            pred = np.clip(pred, target_log_min, target_log_max)
             preds_log.append(pred)
             targets_log.append(yb.numpy())
 
@@ -87,7 +91,26 @@ def main():
     mae = mean_absolute_error(y_true, y_pred)
     r2 = r2_score(y_true, y_pred)
 
-    print(json.dumps({"rmse": rmse, "mae": mae, "r2": r2}, indent=2))
+    mse_log = mean_squared_error(y_true_log, y_pred_log)
+    rmse_log = np.sqrt(mse_log)
+    mae_log = mean_absolute_error(y_true_log, y_pred_log)
+    r2_log = r2_score(y_true_log, y_pred_log)
+
+    print(
+        json.dumps(
+            {
+                "rmse": rmse,
+                "mae": mae,
+                "r2": r2,
+                "rmse_log": rmse_log,
+                "mae_log": mae_log,
+                "r2_log": r2_log,
+                "target_log_min": target_log_min,
+                "target_log_max": target_log_max,
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

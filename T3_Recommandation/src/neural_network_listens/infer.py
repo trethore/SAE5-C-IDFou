@@ -31,6 +31,8 @@ def main():
 
     checkpoint = torch.load(ckpt_path, map_location="cpu")
     meta = meta_from_dict(checkpoint["meta"])
+    target_log_min = float(checkpoint.get("target_log_min", 0.0))
+    target_log_max = float(checkpoint.get("target_log_max", np.inf))
     hidden_dims = cfg["training"]["hidden_dims"]
     dropout = cfg["training"]["dropout"]
 
@@ -53,6 +55,7 @@ def main():
     with torch.no_grad():
         tensor = torch.from_numpy(X).to(device)
         pred_log = model(tensor).cpu().numpy()
+        pred_log = np.clip(pred_log, target_log_min, target_log_max)
     pred_listens = float(np.expm1(pred_log[0]))
     output = {
         "track_id": ids[0],

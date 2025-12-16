@@ -10,7 +10,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
-from config import load_config
+from config import load_config, resolve_split_config
 from data_loader import load_tracks
 from db import get_connection, get_sqlalchemy_engine
 from model import ListenRegressor
@@ -18,7 +18,7 @@ from preprocessing import meta_from_dict, transform_tracks
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evalue le modele sur le jeu de test (20%).")
+    parser = argparse.ArgumentParser(description="Evalue le modele sur le jeu de test (ratio defini dans config).")
     parser.add_argument("--env", type=str, default=None, help="chemin vers .env")
     parser.add_argument("--config", type=str, default=None, help="chemin vers config.json")
     parser.add_argument("--checkpoint", type=str, default=None, help="chemin vers le model")
@@ -29,6 +29,7 @@ def main():
     args = parse_args()
     cfg = load_config(args.config)
     train_cfg = cfg["training"]
+    split_cfg = resolve_split_config(cfg)
     artifacts_dir = Path(cfg["paths"]["artifacts_dir"]).resolve()
     ckpt_path = Path(args.checkpoint) if args.checkpoint else artifacts_dir / "model.pt"
 
@@ -48,7 +49,7 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(
         X_all,
         y_all,
-        test_size=train_cfg["test_size"],
+        test_size=split_cfg["test_ratio"],
         random_state=train_cfg["random_state"],
         shuffle=True,
     )

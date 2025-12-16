@@ -10,7 +10,7 @@ import torch
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
-from config import load_config
+from config import load_config, resolve_split_config
 from data_loader import load_tracks
 from db import get_connection, get_sqlalchemy_engine
 from model import ListenRegressor
@@ -163,6 +163,7 @@ def main():
     args = parse_args()
     cfg = load_config(args.config)
     train_cfg = cfg["training"]
+    split_cfg = resolve_split_config(cfg)
     artifacts_dir = Path(cfg["paths"]["artifacts_dir"]).resolve()
 
     np.random.seed(train_cfg["random_state"])
@@ -174,7 +175,7 @@ def main():
     tracks = tracks.sort_values("track_id").reset_index(drop=True)
     train_idx, test_idx = split_indices(
         n_rows=len(tracks),
-        test_size=train_cfg["test_size"],
+        test_size=split_cfg["test_ratio"],
         random_state=train_cfg["random_state"],
     )
     tracks_train = tracks.iloc[train_idx].reset_index(drop=True)
@@ -190,11 +191,11 @@ def main():
     X_train_full = np.nan_to_num(X_train_full, nan=0.0, posinf=0.0, neginf=0.0)
     y_train_full = np.nan_to_num(y_train_full, nan=0.0, posinf=0.0, neginf=0.0)
 
-    if train_cfg["val_ratio"] > 0:
+    if split_cfg["val_ratio"] > 0:
         X_train, X_val, y_train, y_val = train_test_split(
             X_train_full,
             y_train_full,
-            test_size=train_cfg["val_ratio"],
+            test_size=split_cfg["val_ratio"],
             random_state=train_cfg["random_state"],
             shuffle=True,
         )

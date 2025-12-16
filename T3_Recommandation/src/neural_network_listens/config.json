@@ -1,10 +1,16 @@
 {
   "training": {
-    "epochs": 15,
-    "batch_size": 512,
-    "learning_rate": 0.0008,
-    "hidden_dims": [256, 128, 64],
-    "dropout": 0.1,
+    "epochs": 20,
+    "batch_size": 256,
+    "learning_rate": 0.0005,
+    "hidden_dims": [
+      256,
+      128
+    ],
+    "dropout": 0.2,
+    "weight_decay": 0.0001,
+    "lr_factor": 0.5,
+    "lr_patience": 10,
     "test_size": 0.2,
     "val_ratio": 0.1,
     "random_state": 42

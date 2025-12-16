@@ -63,10 +63,12 @@ def train_loop(
     epochs: int,
     device,
     lr: float,
+    weight_decay: float = 0.0,
+    lr_factor: float = 0.5,
+    lr_patience: int = 3,
 ):
     criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     best_state = None
     best_val = float("inf")
     history: List[Dict] = []
@@ -94,6 +96,10 @@ def train_loop(
         if not np.isnan(val_loss) and val_loss < best_val:
             best_val = val_loss
             best_state = model.state_dict()
+
+        # Scheduler désactivé (stabilité) ; laisser ici si réactivation souhaitée.
+        # if not np.isnan(val_loss):
+        #     scheduler.step(val_loss)
 
     if best_state is None:
         best_state = model.state_dict()
@@ -187,6 +193,9 @@ def main():
         epochs=train_cfg["epochs"],
         device=device,
         lr=train_cfg["learning_rate"],
+        weight_decay=train_cfg.get("weight_decay", 0.0),
+        lr_factor=train_cfg.get("lr_factor", 0.5),
+        lr_patience=train_cfg.get("lr_patience", 3),
     )
 
     save_artifacts(

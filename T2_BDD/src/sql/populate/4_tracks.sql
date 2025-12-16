@@ -22,12 +22,40 @@ CREATE TEMP TABLE stg_track (
 
 \copy stg_track FROM 'T1_analyse_de_donnees/cleaned_data/clean_tracks.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
 
+-- Table temporaire pour récupérer les numéros de piste / disque depuis les données brutes
+CREATE TEMP TABLE stg_raw_track_numbers (
+    track_id TEXT,
+    album_id TEXT,
+    album_title TEXT,
+    artist_id TEXT,
+    artist_name TEXT,
+    tags TEXT,
+    track_bit_rate INT,
+    track_comments INT,
+    track_composer TEXT,
+    track_date_created DATE,
+    track_disc_number INT,
+    track_duration INT,
+    track_explicit BOOLEAN,
+    track_favorites INT,
+    track_genres TEXT,
+    track_instrumental BOOLEAN,
+    track_interest DOUBLE PRECISION,
+    track_listens INT,
+    track_lyricist TEXT,
+    track_number INT,
+    track_publisher TEXT,
+    track_title TEXT
+);
+
+\copy stg_raw_track_numbers FROM 'T1_analyse_de_donnees/cleaned_data/clean_raw_tracks.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
+
 ALTER TABLE stg_track ADD COLUMN new_uuid UUID DEFAULT uuid_generate_v4();
 
 INSERT INTO track (
     track_id, album_id, track_title, track_duration, track_listens, 
     track_favorites, track_interest, track_comments, track_date_created, 
-    track_composer, track_lyricist, track_publisher
+    track_composer, track_lyricist, track_publisher, track_number, track_disc_number
 )
 SELECT 
     t.new_uuid, 
@@ -41,9 +69,12 @@ SELECT
     t.track_date_created, 
     t.track_composer, 
     t.track_lyricist, 
-    t.track_publisher
+    t.track_publisher,
+    r.track_number,
+    r.track_disc_number
 FROM stg_track t
 LEFT JOIN _legacy_id_map m_alb ON m_alb.old_id = t.album_id AND m_alb.table_name = 'album'
+LEFT JOIN stg_raw_track_numbers r ON r.track_id = t.track_id
 JOIN _legacy_id_map m_art ON m_art.old_id = t.artist_id AND m_art.table_name = 'artist';
 
 INSERT INTO _legacy_id_map (table_name, old_id, new_uuid)

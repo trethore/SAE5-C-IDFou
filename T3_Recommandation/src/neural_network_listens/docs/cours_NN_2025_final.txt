@@ -1,0 +1,1699 @@
+Introduction aux réseaux
+de neurones
+
+julie.rabette@nokia.com
+1
+
+© 2024 Nokia
+
+Agenda
+1.
+2.
+3.
+4.
+5.
+6.
+
+2
+
+Introduction aux réseaux de neurones
+Principe de fonctionnement
+Limitations
+Les réseaux de neurones au quotidien
+Frameworks et outils
+Les réseaux de neurones et la sécurité
+
+© 2024 Nokia
+
+Les réseaux de neurones
+
+Format et but du cours
+CM 1h + TD 4h
+TD :
+•
+
+Utilisation d’un réseau de neurone pré-entrainé pour faire de la classification d’images
+
+But :
+•
+
+Manipuler un des framework python qui permet d’utiliser des réseaux de neurones : pytorch
+
+•
+
+Voir comment on peut utiliser les modèles pré-entrainés
+
+•
+
+Comprendre les différentes étapes pour utiliser un réseau de neurones
+
+3
+
+© 2024 Nokia
+
+Introduction aux réseaux de
+neurones
+
+4
+
+© 2024 Nokia
+
+les réseaux de neurones et l’IA
+
+La place des réseaux de neurones dans le monde de l’IA
+Natural
+language
+processing
+
+K nearest
+neighbors
+
+AI
+
+K means
+Support vector machine
+
+Machine learning
+
+Decision trees
+RNN
+Convolutional neural networks
+
+Deep
+learning
+CNN
+
+5
+
+© 2024 Nokia
+
+Training / Inférence
+
+forward
+backward
+
+Les NN font parties des techniques d’apprentissage supervisé
+Training
+
+Réseau de neurones
+
+Mise a jour des params du NN
+
+Prédiction du NN
+
+Calcul de la distance entre la
+prédiction et le label
+
+Prise en compte de la
+distance pour calculer les
+nouveaux poids
+
+Inférence
+
+Réseau de neurones
+
+6
+
+© 2024 Nokia
+
+Prédiction du NN
+
+Classe = chat
+
+Dans quel cas peut-on utiliser les réseaux de neurones ?
+Taille du dataset
+
+Ressources
+
+Type de données
+
+Les NN ont besoin de grand
+dataset pour un entrainement
+efficace
+
+Le training d’un NN est couteux
+en terme de calcul =>
+GPU/énergie
+
+Les NN sont efficaces sur les
+données non structures telles que
+les images / les textes / le son
+
+Cas où les reseaux de neurones ne sont pas les plus adaptés pour résoudre le pb :
+Traitement d’images avec un petit dataset => pas assez de données => voir plutôt les méthodes de descentes de gradient (SGD)
+
+Traitement de données (pas image/pas son/pas texte) avec des catégories => arbre de décisions
+
+7
+
+© 2024 Nokia
+
+Exemple matlab
+
+Quel algo pour quel problème à résoudre ?
+Matlab propose d’utiliser les critères suivants pour choisir
+un algo :
+
+•
+
+Taille du dataset
+
+•
+
+Temps d’apprentissage
+
+•
+
+Facilité a voir si l’algo converge
+
+•
+
+Facilité du tuning des param de l’algo
+
+8
+
+© 2024 Nokia
+
+A quoi servent les réseaux de neurones ?
+
+•
+
+•
+
+Initialement les réseaux de
+neurones ont été utilisés
+avec le traitement d’image
+Ils sont maintenant utilisés
+dans de nombreux domaines
+
+Domaines
+
+Classification
+
+Régression
+
+Reconnaissance images /
+voix / signaux
+
+Binaire (chat/ non chat)
+
+Diagnostic medical
+
+Mutiple (plus de 2
+classes en sortie)
+
+Prédiction d’une valeur
+de sortie à partir de
+valeurs d’entrées
+
+Base des LLM
+Détection d’anomalies
+(fraude, attaque …)
+Systèmes de
+recommendations
+Prévisions météo, eco,
+ventes …
+
+9
+
+© 2024 Nokia
+
+Attention il faut
+connaître le nombre de
+classes que l’on veut en
+sortie
+
+Exemple prediction de
+precipitation, de
+temperature, …
+
+Principes de fonctionnement
+
+10
+
+© 2024 Nokia
+
+Principe de fonctionnement d’un neurone
+1 neurone : fonction d’aggrégation + activation
+
+activation
+
+Aggregation
+x1
+inputs
+
+x2
+
+Paramètres du
+neurone qui sont à
+optimiser :
+
+w1
+w2
+
+f
+
+y output
+
+w3
+x3
+b
+f(xi) = w1x1 + w2x2 +w3x3 +b
+
+11
+
+© 2024 Nokia
+
+w => poids (weight)
+b => biais (bias)
+
+y = 1 si f >=0
+y = 0 sinon
+
+Principe de fonctionnement d’un neurone
+
+1 neurone : apprentissage renforce les poids qui amènent a la bonne prediction
+
+taille animal
+
+w1
+
+Longueur de la
+nageoire
+
+w2
+
+Longueur des
+moustache
+
+w3
+
+f
+
+y
+
+CHAT
+
+y = 1 si f >=0
+y = 0 sinon
+b
+
+Durant le training le poids w2 va diminuer au point que la
+participation dans l’aggregation de ‘longueur de la nageoire’ soit
+negligeable
+12
+
+© 2024 Nokia
+
+Si y =1 classe = chat
+sinon classe = NON chat
+
+Structure d’un réseau de neurones
+
+Organisation en layers (couche) d’un réseau de neurones
+Input layer
+
+Hidden layer
+
+neurone
+
+connexion entre 2
+neurones
+
+13
+
+© 2024 Nokia
+
+couche
+
+Output layer
+
+Types de layers pour les convolutional neural network (CNN)
+•
+
+•
+
+•
+•
+
+•
+•
+
+Layers
+Convolution layer : opération de convolution (contient
+des weights qui sont appris pendant le training)
+
+•
+
+Layers d’activation
+
+•
+
+Permet d’insérer de la non-linéarité dans le CNN
+
+•
+
+Différentes fonctions d’activation possibles
+
+Pooling layer : réduction de la taille
+Fully Connected layer : connecte les neurones à toutes
+les activations de la couche précédente
+Batch norm layer : opération de normalisation
+Flatten layer : mise a plat des dimensions (tensor d’une
+seule dimension en sortie)
+
+•
+
+14
+
+© 2024 Nokia
+
+Softmax : transforme la sortie en probabilité (pour les
+classifiation)
+
+Types de layers pour les convolutional neural network (CNN)
+Exemple de pattern Classique en CNN
+
+1
+2
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+3
+4
+5
+
+Fully connected
+
+6
+
+flatten
+
+15
+
+© 2024 Nokia
+
+Types de layers pour les convolutional neural network (CNN)
+Les layers classiques
+Conv
+
+Operation de convolution
+
+Pool
+
+Reduction de la taille de la matrice
+d’entrée
+
+FC
+
+Fully connected
+
+Relu
+
+Activation
+0.75
+
+SoftMax
+16
+
+© 2024 Nokia
+
+Permet d’avoir des probabilités sur la
+sortie du NN
+
+NN
+
+0.15
+0.10
+Sum = 1
+
+Types de layers pour les convolutional neural network (CNN)
+Exemple de pattern Classique en CNN
+input
+
+Conv
+
+input
+
+Conv
+Conv
+
+17
+
+Relu
+
+Relu
+
+FC
+
+Pool
+
+Relu
+Pool
+
+FC
+Relu
+
+FC
+
+SoftMax
+
+SoftMax
+
+output
+
+output
+
+© 2024 Nokia
+
+Les architecture de réseau de neurones convolutif
+
+Architectures utilisées dans le monde du ML en utilisant des patterns connus
+• Restnet V1, V2
+• mobilenet V1, V2
+• densenet
+• ….
+
+resnet
+
+En TP on va utiliser un Resnet
+
+densenet
+
+https://towardsdatascience.com/understanding-andvisualizing-resnets-442284831be8
+18
+
+© 2024 Nokia
+
+mobilenet
+
+Training
+
+Grandes phases du training
+Training
+Prédiction
+du NN
+Matrice de pixel +
+label = ‘chat’
+Mise a jour
+des poids
+
+Forward propagation
+
+backward propagation
+
+19
+
+© 2024 Nokia
+
+Calcul de la distance entre
+la prédiction et le label
+
+Prise en compte de la
+distance pour calculer les
+nouveaux poids
+
+Calcul de la
+loss function
+
+Loss function ou function de coût
+
+Distance entre la prédiction du modèle et le résultat attendu (label)
+BUT du training :
+ Optimisation de function de coût (loss function)
+ Modifier les poids du modèle pour minimiser le loss
+
+ Modifier les poids des neurones de sortie et propager cette optimisation aux neurones de la couche précédente
+
+(retropropagation / backward)
+
+•
+
+Loss pour de la régression (valeurs continues)
+
+Loss pour de la classification (valeurs discrètes)
+
+•
+
+Erreur quadratique moyenne (MSE)
+
+•
+
+Cross entropy binaire
+
+•
+
+Erreur absolue moyenne (MAE)
+
+•
+
+Cross entropy multiple
+
+•
+
+L1 lisse
+
+•
+
+Hinge embedding loss
+
+https://www.geeksforgeeks.org/ml-common-loss-functions/
+https://www.geeksforgeeks.org/ml-common-loss-functions/
+20
+
+•
+
+© 2024 Nokia
+
+Limitations
+
+21
+
+© 2024 Nokia
+
+Importance des données de training
+Qualité des données => capital
+
+Principe de l’apprentissage supervisé :
+
+Shit in shit out
+Garbage in, Garbage out
+(George E. P. Box statistician)
+
+Entrainer un modèle avec un dataset de training (représentatif du problème que l’on veut résoudre)
+On attend du modèle qu’après le training il soit capable de généraliser et de pouvoir prédire correctement sur des
+données inconnues. (pas dans les données de training)
+Si les données de training ne sont pas correctes, ne représentent pas le problème a résoudre, le model apprendra des
+choses incorrecte et donnera de mauvaises predictions
+ “biais” des LLM selon les données d’apprentissage
+ “biais” de l’IA (pour l’obtension de prêt, le recrutement, cibler les controles, …)
+ https://www.numerama.com/tech/426774-amazon-a-du-desactiver-une-ia-qui-discriminait-les-candidatures-defemmes-a-lembauche.html
+22
+
+© 2024 Nokia
+
+Importance des données de training
+
+Shit in shit out
+
+Données erronnées : mauvaise labellisation
+Dataset training
+mouton
+
+Model
+panthère
+
+plante
+
+23
+
+© 2024 Nokia
+
+Prediction
+du model
+
+?
+
+Importance des données de training
+
+Shit in shit out
+
+Représentativité du dataset training : données biaisées
+Dataset training
+chat
+
+chat
+
+chat
+chat
+
+mouton
+
+24
+
+© 2024 Nokia
+
+Model
+
+chat
+Prediction
+du model
+
+?
+
+Les problèmes que l’on peut avoir en apprentissage supervisé
+Overfitting & underfitting
+
+25
+
+© 2024 Nokia
+
+Les problèmes que l’on peut avoir en apprentissage supervisé
+Overfitting
+•
+•
+
+Le modèle apprend “par Coeur” les données de training
+Il prend en compte notamment des points qui sont du “bruit” (non
+représentatif, point a la marge).
+
+•
+
+Il a de très bonnes perf sur le dataset de training
+
+•
+
+Il n’arrive pas a généraliser sur des données inconnues
+
+•
+
+Arrive quand on utilise un modèle très complexe pour gérer un pb simple mais
+bruité
+
+Solutions:
+•
+
+Split du dataset en train/test et vérifier les perf sur des données inconnues (il
+faut un dataset assez grand)
+
+•
+
+Cross validation
+
+•
+
+Normalisation
+
+•
+
+Early stopping
+
+•
+
+Réduire la complexité du modèle
+
+26
+
+© 2024 Nokia
+
+Les problèmes que l’on peut avoir en apprentissage supervisé
+Underfitting
+•
+
+Le model n’arrive pas à apprendre
+
+•
+
+Peut arriver si on a prévu un modèle trop simple pour un pb complexe
+
+•
+
+(ex : une regression linéaire pour un pb polynomial)
+
+•
+
+•
+
+Peut arriver si les données sont très bruitées où avec des valeurs
+erronnées
+
+Taille du dataset de training insuffisante
+
+Solutions:
+•
+
+Utiliser un modèle plus complexe
+
+•
+
+Supprimer le bruit des données d’entrée
+
+•
+
+Augmenter le nombre d’epoch pour le training
+
+27
+
+© 2024 Nokia
+
+Les réseaux de neurones au
+quotidien
+
+28
+
+© 2024 Nokia
+
+Les différentes façons d’utiliser des NN
+From scratch
+
+Transfer learning
+
+Fine tuning
+
+Init des poids de façon aléatoire
+
+On se base sur un modèle pré-entrainé qui
+va etre ré-entrainé.
+
+On se base sur un modèle pré-entrainé
+qui va etre ré-entrainé.
+
+Définition de l’architecture et
+de la profondeur du reseau de
+neurones
+
+Remplacer la dernière couche du modèle
+par une couche spécifique a notre
+problème
+
+Remplacer la dernière couche du modèle
+par une couche spècifique
+
+Contraintes:
+• Dataset très important
+• Nombreuses GPU
+• Temps de training important
+• Connaissances poussées en
+NN
+
+Les poids de toutes les couches sauf la
+dernières vont être figés
+Seules les couches spécifiques vont être
+entrainées
+=> Nécéssite un dataset de training plus
+petit que pour un training from scratch et
+le fine tuning
+
+Reconnaissance large éventail de photos
+d’animaux / reconnaissance de races de
+chien
+29
+
+© 2024 Nokia
+
+Pas de freeze sur les poids du modèle :
+tous les poids vont être mis a jour
+=> Nécessite moins de data que le from
+scratch mais plus que le transfert learning
+Reconnaissance générale d’object sur des
+images / reconnaissance de fractures sur
+des radios
+
+Utilisation d’un réseau de neurone pour de la classification
+Feature extraction / classifier
+•
+
+•
+
+Les derniers layer du NN (flatten / FC /softmax)
+servent pour la classification
+Les layers d’avant font du feature learning :
+•
+
+30
+
+Extraction d’infos à partir de l’image
+
+© 2024 Nokia
+
+Transfert learning :
+
+Utiliser la partie extraction feature / adapter le classifier a notre use case
+
+31
+
+© 2024 Nokia
+
+Frameworks et outils
+
+32
+
+© 2024 Nokia
+
+Open-source libraries pour le deepLearning en python
+https://builtin-com.translate.goog/data-science/pytorch-vs-tensorflow?_x_tr_sl=en&_x_tr_tl=fr&_x_tr_hl=fr&_x_tr_pto=rq
+
+Keras
+API de haut
+niveau
+
+Utilisé pour faire
+des PoC
+rapidement
+
+33
+
+Tensorflow (google)
+Backend
+tensorflow
+
+Support CNN et
+RNN et même un
+mixte
+
+API de haut et
+bas niveau
+Visualisation
+tensorboard
+
+Le plus user
+friendly
+
+Utilisé en
+recherche et en
+prod
+
+API haut niveau
+de tensorflow
+
+Plusieurs niveau
+d’abstraction
+possibles
+
+© 2024 Nokia
+
+Static
+computation
+graph
+Utilisation CPU /
+GPU
+Pour un dev plus
+compliqué a
+prendre en main
+que pytorch
+
+Pytorch (facebook)
+API de bas
+niveau
+
+Dynamic graph
+
+Basé sur la
+librairie torch
+
+GPU HW
+acceleration
+
+Tres proche du
+dev python
+Inclus des lib
+comme
+torchVision
+
+Etait un peu
+moins utilisé que
+tensorflow mais
+maitenant c’est
+équivalent
+DDP pour le //
+
+Un réseau de neurone en pytorch
+
+C’est une classe qui hérite de torch.nn.Module
+Init :
+On définie les layers du NN
+Forward :
+On explique comment le forward est
+calculé
+Input = x
+
+Conv
+Relu
+
+Flatten
+FC
+output
+34
+
+© 2024 Nokia
+
+L’ecosystéme pour le ML en python
+Les librairies utilisées pour le ML python
+
+notebooks
+
+Sauvegarde des model .pth
+ou .onnx et des plots
+
+utilitaires
+
+Sauvegarde des
+dataset
+
+Format pour l’échange
+des models
+Librairie ML
+
+35
+
+© 2024 Nokia
+
+Visualisation pendant le training
+des poids, biais …
+
+Hyperparameters tuning
+
+Outils pour la visualisation
+
+Mlflow
+
+Pour le tracking des modèles
+https://mlflow.org/docs/latest/index.html
+Experiment :
+•
+
+Contient plusieurs runs
+
+•
+
+1 run = un lancement de training
+
+Pour un run on enregistre :
+•
+
+Le model qui a été généré par le training ( format .th / .onnx / tensorflow)
+
+•
+
+Les params du training
+
+•
+
+Les metrics : loss / accuracy mais on peut aussi avoir des plots (qui peuvent être générés pendant le training)
+
+•
+
+Les checkpoints
+
+On peut aussi comparer plusieurs (très pratique)
+36
+
+© 2024 Nokia
+
+Les réseaux de neurones et la
+sécurité
+
+37
+
+© 2024 Nokia
+
+Attaques sur les réseaux de neurones
+Types d’attaques
+Par manipulation
+
+38
+
+© 2024 Nokia
+
+Par infection
+
+Par exfiltration
+
+Détourner le
+comportement du
+modele en prod
+
+Pousser a la mauvaise
+prediction
+
+Obtenir des
+informations du
+modèle
+
+Requêtes
+malveillantes
+
+Infecter le dataset de
+training ou insertion de
+malware
+
+Requetes
+malveillantes
+
+DoD, réponses
+inatendues
+
+Mauvaises réponses du
+modèle ou utilisation
+du malware
+
+Fuite de données
+d’entrainement,
+des poids du
+modèle …
+
+Exemple attaque par manipulation
+Adversarial attack
+
+Attaque sur un modèle en inférence
+On ajoute du bruit a la requête invisible pour les humain => le bruit va provoquer la mauvaise prediction du modèle
+
+https://www.futura-sciences.com/tech/actualites/intelligence-artificielle-voici-pulls-anti-reconnaissance-faciale-103008/
+39
+
+© 2024 Nokia
+
+Sécurité : les types d’attaques sur un réseau de neurone
+ises prédictio
+a
+v
+ns
+u
+a
+m
+Data
+poisoning
+
+Accès aux données d’entrainement
+Data poisoning / Adversarial attack
+
+Adversarial
+attack
+
+Accès au modèle
+Malware
+injection
+
+Attaques
+
+40
+
+© 2025 Nokia
+
+DDoS
+
+Accès a l’API du modèle en inférence
+
+Model
+stealing
+
+Ob
+
+Malware injection, backdooring attack, trojaning
+attack
+
+te n
+
+Information
+leakage
+Model
+Inversion
+
+tio n d ’ i n for m a ti o
+
+ns
+
+Model extraction=stealing / inversion / information
+leakage
+
+Accès a l’API du modèle en inférence
++ but = tuer le service
+DDoD
+
+IA Act
+
+Réglement européen qui encadre l’utilization de l’IA
+•
+
+•
+
+•
+
+41
+
+But :
+
+Protéger les droits fondamentaux, la santé et la sécurité
+des citoyens européens face aux risques de l’IA
+
+•
+
+Les trucs interdits :
+•
+•
+
+Classification par risque des systèmes d’IA:
+•
+
+Risque minimal
+
+•
+
+•
+
+Risque élevé (exigences strictes pour santé, justice ..)
+
+•
+
+•
+
+Pratiques interdites
+
+© 2024 Nokia
+
+Techniques de manipulatrices ou trompeuses
+Catégorisation biométrique déduisant des attributs
+sensibles (vie sexuel, religion, opinions politique, etat
+de santé …)
+Notation sociale
+
+Evaluation du risque qu’une personne commette des
+infractions pénales
+
+•
+
+Faire des bases de données de reconnaissance faciale
+
+•
+
+Déduction des émotions sur le lieu de travail
+
+Infos pratiques
+
+42
+
+© 2024 Nokia
+
+Les rôles dans une équipe de dev ML
+
+Il y a plusieurs rôles avec des compétences différentes dans une équipe qui fait du ML
+
+Data scientist
+
+Dev Python ML
+
+MLOps
+
+Archi du model
+
+Dev python pour :
+
+DevOps (CI/CD,gitlab, serveurs, …)
+
+Hyperparam du training
+
+•
+•
+•
+•
+
+Analyse du training
+
+43
+
+© 2024 Nokia
+
+Les outils
+les différentes chaines
+La connexion aux bases
+La connexion a mlflow
+
+Gestion des serveur de GPU
+Gestion des pipeline special ML
+
+Informations utiles
+Tuto / cheat sheet
+
+https://pytorch.org/tutorials/beginner/ptcheat.html
+
+https://www.learnpytorch.io/pytorch_cheatsheet/
+Ce dont vous aurez besoin pour le TD : Env python
+
+pytorch /
+matplotlib / torchvision /
+tqdm /
+PIL / numpy /
+seaborn / sklearn
+
+le code du TP est a aller chercher sur github : cats_detector
+
+44
+
+© 2024 Nokia
+
+Les TPs
+
+détecteur d’images de chats
+Le code complet du TP
+Le repo ou il y a du code a trou
+Le repo ou se trouvent les images de test : ne
+pas les utiliser dans le dataset de training
+Le repo ou se trouvent les images du dataset
+de training
+Le repo pour sauvegarder les modèles
+entrainés
+
+45
+
+© 2024 Nokia
+
+Les TPs
+
+Détecteur d’images de chats
+•
+
+TP1
+
+•
+
+•
+
+On prend un resnet pytorch pre-entrainé
+
+•
+
+•
+
+•
+•
+
+On va utiliser ce model en inference sur un dataset de
+test
+But = prise en main de pytorch
+Comprendre comment on interprete une prediction du
+model
+
+•
+•
+
+Utilisation du repo test_images
+
+•
+
+46
+
+© 2024 Nokia
+
+On utilise le model du TP1 et on va faire du transfert
+learning
+•
+
+•
+•
+
+TP2
+
+Changer le model et refaire une etape de training
+
+En sortie du modèle uniquement 2 classes (cat/no_cat)
+Ne pas utiliser les images de test dans le dataset de
+training
+But : faire plusieurs training en changeant les param et
+trouver un modele qui a la meilleure prediction sur le
+dataset de test (test_images)
+Utilisation du repo images comme dataset de training
+
+TP 2
+
+training
+
+Training avec un optimizer
+=> module qui fait la mise a jour des parametres du modele. Son but est de minimiser la function de cout
+=> 2 actions : calcul des gradients + mise a jours des parametres
+
+=> l’optimizer a un learning rate
+Training sans scheduler :
+=> il permet de changer dynamiquement pendant le training le learning rate (de l’optimizer)
+
+:
+
+47
+
+© 2024 Nokia
+
+TP 2
+
+Les paramètres qui influent sur le training
+Les paramètres que l on peut changer :
+
+•
+
+changer le ratio dataset training/test
+
+•
+
+changer le learning rate
+
+•
+
+changer le weight_decay
+
+•
+
+changer le nombre d’epoch
+
+•
+
+changer les images qui sont dans le dataset de training (en ajouter sans ajouter les photo de test
+bien sur !)
+
+•
+
+changer l’optimizer => prendre un optimizer pytorch différent d’Adam
+
+•
+
+changer la loss function => prendre une loss function differente de CrossEntropy
+
+•
+
+ajouter un scheduler
+
+48
+
+© 2024 Nokia
+
+Liens utilisés pour le cours
+https://datascientest.com/convolutional-neural-network
+https://www.researchgate.net/figure/The-comparison-between-the-general-connections-and-the-residual-connections-used-in_fig2_352408937
+https://towardsdatascience.com/a-comprehensive-guide-to-convolutional-neural-networks-the-eli5-way-3bd2b1164a53
+https://www.linkedin.com/pulse/understanding-activation-functions-neural-networks-guide-davis-joseph-aswpe/
+https://www.researchgate.net/figure/Artificial-neural-network-activation-functions-In-this-figure-the-most-common_fig8_344331692
+https://pyimagesearch.com/2021/05/14/convolutional-neural-networks-cnns-and-layer-types/
+https://www.geeksforgeeks.org/underfitting-and-overfitting-in-machine-learning/
+https://www.linkedin.com/pulse/techniques-reduce-overfitting-andreas-aristidou-phd/
+https://www.researchgate.net/figure/Architecture-of-normal-residual-block-a-and-pre-activation-residual-block-b_fig2_337691625
+https://www.researchgate.net/figure/a-Resnet-architecture-b-MobileNet-V2-architecture-c-DenseNet-architecture-d_fig1_328652206
+https://www.researchgate.net/publication/342400905_RealTime_Assembly_Operation_Recognition_with_Fog_Computing_and_Transfer_Learning_for_Human-Centered_Intelligent_Manufacturing
+https://www.linkedin.com/pulse/transfer-learning-fine-tuning-pre-trained-deep-models-g-her-w-adhane/
+https://medium.com/@danushidk507/max-pooling-ef545993b6e4
+https://datascientest.com/reseaux-de-neurones-densenet
+https://www.analyticsvidhya.com/blog/2022/01/convolutional-neural-network-an-overview/
+https://www.evidentlyai.com/classification-metrics/accuracy-precision-recall
+https://towardsdatascience.com/https-medium-com-dashingaditya-rakhecha-understanding-learning-rate-dd5da26bb6de
+https://spotintelligence.com/2024/02/19/learning-rate-machine-learning/
+https://cyber.gouv.fr/sites/default/files/document/Recommandations_de_s%C3%A9curit%C3%A9_pour_un_syst%C3%A8me_d_IA_g%C3%A9n%
+C3%A9rative.pdf
+
+49
+
+© 2024 Nokia
+
+Training / inference
+
+forward
+backward
+
+Les CNN font parties des techniques d’apprentissage supervisé
+Training
+Prédiction
+du NN
+Matrice de pixel +
+label = ‘chat’
+Mise a jour
+des poids
+
+Calcul de la distance entre
+la prédiction et le label
+
+Prise en compte de la
+distance pour calculer les
+nouveaux poids
+
+Inférence
+Prediction
+du NN
+Matrice de pixel
+51
+
+© 2024 Nokia
+
+Classe = chat
+
+Metrics
+
+Estimation de la performance d’un modèle
+
+Accuracy (ou precision) : pourcentage de predictions correctes pour un
+modèle par rapport au nombre total de prédictions
+Loss function (ou fonction de cout) : function qui évalue la difference entre
+la prediction et la Valeur cible réelle (label)
+matrice de confusion : pour les classifications. Permet de comparer les
+classes prédites par le modéles aux classes réelles
+
+52
+
+© 2024 Nokia
+
+Prediction
+Chat
+
+Prediction
+Pas chat
+
+Label chat
+
+15
+
+4
+
+Label pas
+chat
+
+2
+
+60
+
+Courbe de l’accuracy
+Comment voir l’overfitting
+
+53
+
+© 2024 Nokia
+
+Learning rate
+
+Taux d’apprentissage
+
+• un hyperparamètre
+• Il contrôle la taille des pas effectués par
+l'algorithme d'optimisation qui mets à jour
+les poids et biais
+Il a un impact sur :
+• La vitesse d’apprentissage
+• La précision de la convergence
+
+54
+
+© 2024 Nokia
+
+Un learning rate adapté permet de
+converger efficacement vers le minimum
+global et permet d’éviter de tomber dans
+un minimum local
+
+Learning rate
+
+Impact sur l’apprentissage
+•Learning rate élevé (pas élevé):
+•accélère l’entraitenement, mais peut provoquer des oscillations ou
+un échec de convergence.
+•Les mises à jour peuvent devenir instables, et l'algorithme risque de
+diverger ou de ne jamais atteindre un minimum.
+
+•Learning petit (pas faible) :
+• L'entraînement devient lent, et le modèle peut rester bloqué dans
+un minimum local.
+•.
+
+55
+
+© 2024 Nokia
+
+Learning rate
+
+Min local et global de la function de cout
+
+56
+
+© 2024 Nokia
+
+optimizer
+Rôle :
+Gèrer la mise à jour des paramètres (poids et biais) d'un modèle pendant l'entraînement
+
+But :
+Minimiser la fonction de coût
+Utilisation :
+Il met en œuvre un algorithme d'optimisation (descente de gradient et ses différentes version
+améliorées)
+Il utilise le learning rate
+Types :
+• SGD
+• Adam
+• Adagrad
+https://pytorch.org/docs/stable/optim.html#algorithms
+57
+
+© 2024 Nokia
+
+optimizer
+
+Utilisation pratique pytorch
+Dans la boucle des epoch :
+• Réinit des gradients
+• optimizer.zero_grad()
+• Calcul de la perte
+• loss = criterion(output, target)
+• Rétropropagation
+• loss.backward()
+• Mise a jour des poids
+• optimizer.step()
+
+58
+
+© 2024 Nokia
+
+scheduler
+Rôle :
+Ajuster le learning rate durant le training
+
+Un bon ajustement du learning rate
+peut réduire le nombre d’itérations
+nécessaires pour atteindre un modèle
+performant.
+
+But :
+Couplé à un optimizer permet d’améliorer la convergence, la stabilité et les perfs du modèle.
+Utilisation :
+Modification du learning rate durant le training
+Peut diminuer le learning rate progressivement pour éviter de sauter au-dessus du min global vers la
+fin du training
+Peut augmenter le learning rate pour éviter de tomber dans un minimum local
+
+Types :
+• stepLR
+• multiStepLR
+https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+59
+
+© 2024 Nokia
+
+Workflow de training
+
+Exemple d’un workflow de training
+BUT = avoir en sortie un modele entrainé pret a aller en inference (production) et echangeable facilement donc au format onnx
+En entrée on a les uses cases choisis pour l’entrainement
+En sortie on a un model entrainé pret a etre envoyé en inference
+On utilise le format .h5 pour les dataset
+On utilise le standard onnx (permet d’echanger des CNN entre differentes appli qui n’utilisent pas forcement le meme framework pour les NN)
+
+Generation
+dataset
+
+Dataset .h5
+
+Database S3
+
+60
+
+© 2024 Nokia
+
+training
+
+Model .pth
+entrainé
+"normalize_
+received_da
+ta"
+Sauvegarde
+sous mlflow
+
+Conversion
+en onnx
+
+Model onnx
+entrainé
+"normalize_
+received_da
+ta"
+Sauvegarde
+sous mlflow
+
+Performances lors de l’infèrence : optimisation
+tization
+Quan
+Post training
+quantization
+
+Utilisation mémoire
+
+Les poids et l’activation sont stocké en mémoire en 8bits au lieu de 32-bits => gain de place
+
+Quantization
+aware training
+
+Consommation electrique
+
+Réduction de la consummation élec a la fois pour l’accès
+mémoire et pour les calculs
+
+performance
+
+ss
+
+61
+
+© 2024 Nokia
+
+a ti
+
+pr e
+
+io n
+
+Optimization
+
+p il
+
+Co m
+
+Pruning
+
+on
+
+Latence
+
+m
+Co
+
+Les calculs et les accès mémoire sont plus simple en
+8-bits qu’en 32-bits => gain en latence
+
+Surface de Silicium sur le composant
+
+Utilisation de moins de silicium sur la puce pour faire
+des calculs en int8 qu’en float => on gagne de la place
+sur le composant => moins de dissipation de chaleur
+
+Learning rate
+
+Le learning rate est un des hyperparamètres les plus importants à régler, car il a un
+impact direct sur la vitesse et la stabilité de l'apprentissage, ainsi que sur la qualité des
+résultats finaux.
+
+Learning rate (λ) is one such hyper-parameter that defines the adjustment in
+the weights of our network with respect to the loss gradient descent. It
+determines how fast or slow we will move towards the optimal weights
+The Gradient Descent Algorithm estimates the weights of the model in many
+iterations by minimizing a cost function at every step.
+62
+
+© 2024 Nokia
+
+RESNET pattern
+
+63
+
+© 2024 Nokia
+
+

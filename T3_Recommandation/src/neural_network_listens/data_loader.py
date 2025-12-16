@@ -7,7 +7,7 @@ from db import get_sqlalchemy_engine
 
 
 def load_tracks(engine=None) -> pd.DataFrame:
-    """Charge les colonnes nécessaires depuis la table track."""
+    """Charge les colonnes necessaires depuis la table track."""
     query = """
         WITH latest_rank AS (
             SELECT

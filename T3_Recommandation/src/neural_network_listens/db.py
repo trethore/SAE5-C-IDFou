@@ -9,18 +9,18 @@ from dotenv import load_dotenv
 
 
 def _load_env(env_path: Optional[str | Path]) -> None:
-    """Charge les variables d'environnement depuis le .env fourni ou celui du root."""
+    """Charge les variables d environnement"""
     if env_path:
         load_dotenv(dotenv_path=env_path)
     else:
-        # Fallback: .env à la racine du repo
+        # .env a la racine du repo si sa fail
         root_env = Path(__file__).resolve().parents[3] / ".env"
         load_dotenv(dotenv_path=root_env)
 
 
 @contextmanager
 def get_connection(env_path: Optional[str | Path] = None) -> Iterator[psycopg2.extensions.connection]:
-    """Context manager pour obtenir une connexion PG."""
+    """Context manager"""
     _load_env(env_path)
     conn = psycopg2.connect(
         host="localhost",
@@ -36,7 +36,6 @@ def get_connection(env_path: Optional[str | Path] = None) -> Iterator[psycopg2.e
 
 
 def get_sqlalchemy_engine(env_path: Optional[str | Path] = None) -> sa.Engine:
-    """Retourne un engine SQLAlchemy pour un usage silencieux avec pandas."""
     _load_env(env_path)
     user = os.getenv("DB_USER")
     password = os.getenv("DB_ROOT_PASSWORD")

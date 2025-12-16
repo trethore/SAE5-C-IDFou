@@ -5,7 +5,7 @@ from torch import nn
 
 
 class ListenRegressor(nn.Module):
-    """MLP simple pour prédire log1p(listens)."""
+    """MLP simple pour predire log1p(listens)."""
 
     def __init__(self, input_dim: int, hidden_dims: list[int], dropout: float = 0.1):
         super().__init__()

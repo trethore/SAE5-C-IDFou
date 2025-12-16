@@ -18,10 +18,10 @@ from preprocessing import meta_from_dict, transform_tracks
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Évalue le modèle sur le jeu de test (20%).")
-    parser.add_argument("--env", type=str, default=None, help="Path to .env (default: repo root .env)")
-    parser.add_argument("--config", type=str, default=None, help="Path to config.json (default: package config.json)")
-    parser.add_argument("--checkpoint", type=str, default=None, help="Path to model.pt (default: artifacts/model.pt)")
+    parser = argparse.ArgumentParser(description="Evalue le modele sur le jeu de test (20%).")
+    parser.add_argument("--env", type=str, default=None, help="chemin vers .env")
+    parser.add_argument("--config", type=str, default=None, help="chemin vers config.json")
+    parser.add_argument("--checkpoint", type=str, default=None, help="chemin vers le model")
     return parser.parse_args()
 
 
@@ -74,11 +74,11 @@ def main():
     y_pred_log = np.concatenate(preds_log)
     y_true_log = np.concatenate(targets_log)
 
-    # Retour à l'échelle d'origine
+    # retour a l'echelle d'origine
     y_pred = np.expm1(y_pred_log)
     y_true = np.expm1(y_true_log)
 
-    # Nettoyage NaN/inf éventuels
+    # nettoyage eventuels
     y_pred = np.nan_to_num(y_pred, nan=0.0, posinf=0.0, neginf=0.0)
     y_true = np.nan_to_num(y_true, nan=0.0, posinf=0.0, neginf=0.0)
 

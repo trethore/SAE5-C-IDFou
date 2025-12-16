@@ -18,7 +18,7 @@ from preprocessing import PreprocessResult, meta_to_dict, prepare_features
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Entraîne un régressseur sur la table track seule.")
+    parser = argparse.ArgumentParser(description="Entraine un regresseur sur la table track seule.")
     parser.add_argument("--env", type=str, default=None, help="Path to .env (default: repo root .env)")
     parser.add_argument("--config", type=str, default=None, help="Path to config.json (default: package config.json)")
     return parser.parse_args()
@@ -69,6 +69,13 @@ def train_loop(
 ):
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode="min",
+        factor=lr_factor,
+        patience=lr_patience,
+        verbose=False,
+    )
     best_state = None
     best_val = float("inf")
     history: List[Dict] = []
@@ -91,15 +98,14 @@ def train_loop(
 
         val_loss = compute_loss(model, val_loader, criterion, device) if len(val_loader.dataset) else float("nan")
         history.append({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss})
-        print(f"Epoch {epoch:02d} | train_loss={train_loss:.4f} | val_loss={val_loss:.4f}")
+        print(f"Epoch {epoch:02d} | perte_train={train_loss:.4f} | perte_val={val_loss:.4f}")
+
+        if not np.isnan(val_loss):
+            scheduler.step(val_loss)
 
         if not np.isnan(val_loss) and val_loss < best_val:
             best_val = val_loss
             best_state = model.state_dict()
-
-        # Scheduler désactivé (stabilité) ; laisser ici si réactivation souhaitée.
-        # if not np.isnan(val_loss):
-        #     scheduler.step(val_loss)
 
     if best_state is None:
         best_state = model.state_dict()
@@ -144,6 +150,9 @@ def main():
     train_cfg = cfg["training"]
     artifacts_dir = Path(cfg["paths"]["artifacts_dir"]).resolve()
 
+    np.random.seed(train_cfg["random_state"])
+    torch.manual_seed(train_cfg["random_state"])
+
     engine = get_sqlalchemy_engine(args.env)
     tracks = load_tracks(engine)
 
@@ -159,7 +168,7 @@ def main():
     prep_train = prepare_features(tracks_train)
     X_train_full, y_train_full = prep_train.X, prep_train.y
 
-    # Sécurité : remplacement des valeurs non finies restantes
+    # Securite : remplacement des valeurs non finies restantes
     X_train_full = np.nan_to_num(X_train_full, nan=0.0, posinf=0.0, neginf=0.0)
     y_train_full = np.nan_to_num(y_train_full, nan=0.0, posinf=0.0, neginf=0.0)
 
@@ -208,8 +217,8 @@ def main():
         history=history,
     )
 
-    print(f"Model saved to {artifacts_dir / 'model.pt'}")
-    print(f"Summary saved to {artifacts_dir / 'summary.json'}")
+    print(f"Modele enregistre dans {artifacts_dir / 'model.pt'}")
+    print(f"Resume enregistre dans {artifacts_dir / 'summary.json'}")
 
 
 if __name__ == "__main__":

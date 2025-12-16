@@ -15,11 +15,11 @@ from preprocessing import meta_from_dict, transform_tracks
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Prédit les listens pour un track_id donné.")
-    parser.add_argument("track_id", type=str, help="UUID of the track to predict.")
-    parser.add_argument("--env", type=str, default=None, help="Path to .env (default: repo root .env)")
-    parser.add_argument("--config", type=str, default=None, help="Path to config.json (default: package config.json)")
-    parser.add_argument("--checkpoint", type=str, default=None, help="Path to model.pt (default: artifacts/model.pt)")
+    parser = argparse.ArgumentParser(description="Predire les listens pour un track_id donne.")
+    parser.add_argument("track_id", type=str, help="UUID du track a predire.")
+    parser.add_argument("--env", type=str, default=None, help="chemin vers .env")
+    parser.add_argument("--config", type=str, default=None, help="chemin vers config.json")
+    parser.add_argument("--checkpoint", type=str, default=None, help="chemin vers le model")
     return parser.parse_args()
 
 
@@ -37,7 +37,7 @@ def main():
     engine = get_sqlalchemy_engine(args.env)
     df = load_track_by_id(args.track_id, engine)
     if df.empty:
-        raise ValueError(f"No track found for id={args.track_id}")
+        raise ValueError(f"Pas de track pour id ={args.track_id}")
 
     X, ids = transform_tracks(df, meta)
 
@@ -58,7 +58,7 @@ def main():
         "track_id": ids[0],
         "predicted_listens": pred_listens,
     }
-    # Si la valeur réelle est disponible on l'affiche aussi pour contrôle
+    # si la valeur reelle est disponible on l'affiche aussi pour controle
     if "track_listens" in df.columns and not df["track_listens"].isna().all():
         output["actual_listens"] = int(df["track_listens"].iloc[0])
     print(json.dumps(output, indent=2))

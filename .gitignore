@@ -225,3 +225,5 @@ data/
 ## Out
 T1_analyse_de_donnees/out/
 T1_analyse_de_donnees/outputs/
+
+*.DS_Store

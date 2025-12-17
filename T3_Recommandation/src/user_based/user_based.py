@@ -1,10 +1,10 @@
 import os
+import sys
 import psycopg2
 
 from dotenv import load_dotenv
 
 
-ID: str = "6df16dd4-9a1e-497d-a999-e9049d3bc1f0"
 MAX: int = 5
 
 GET_CLOSEST_USERS_QUERY: str = """
@@ -28,6 +28,13 @@ WHERE track_user_listen.account_id = %s;
 
 
 def main() -> None:
+    user_id: str
+    try:
+        user_id = sys.argv[1]
+    except:
+        print("user_id missing")
+        exit(1)
+
     load_dotenv()
 
     connection = psycopg2.connect(
@@ -39,16 +46,16 @@ def main() -> None:
     )
     cursor = connection.cursor()
 
-    cursor.execute(GET_CLOSEST_USERS_QUERY, (ID, ID, MAX))
+    cursor.execute(GET_CLOSEST_USERS_QUERY, (user_id, user_id, MAX))
     closest_users_id_and_distance = cursor.fetchall()
-    
+
     recommended_music: list = []
 
     for user_id_and_dist in closest_users_id_and_distance:
         cursor.execute(GET_LISTENED_TRACKS_QUERY, (user_id_and_dist[0],))
         listened_tracks = cursor.fetchall()
         recommended_music += listened_tracks
-    
+
     print(recommended_music)
 
 

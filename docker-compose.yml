@@ -1,7 +1,10 @@
 services:
   sae5db:
     container_name: sae5db
-    image: postgres:18.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: postgres-vector
     volumes:
       - sae5db_data:/var/lib/postgresql
       - .:/app

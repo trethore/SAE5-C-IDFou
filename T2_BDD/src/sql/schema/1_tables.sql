@@ -222,6 +222,13 @@ CREATE TABLE preference (
     FOREIGN KEY (account_id) REFERENCES "user"(account_id)
 );
 
+CREATE TABLE preference_vector (
+    account_id UUID,
+    embedding VECTOR(71),
+    PRIMARY KEY (account_id),
+    FOREIGN KEY (account_id) REFERENCES "user"(account_id)
+);
+
 CREATE TABLE genre_preference (
     account_id UUID,
     genre_id UUID,

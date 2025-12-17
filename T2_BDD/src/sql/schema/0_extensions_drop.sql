@@ -5,6 +5,9 @@
 -- extension pour UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- extension pour pgvector
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- ------------------------------------------------
 -- DROP
 -- ------------------------------------------------

@@ -18,6 +18,18 @@
 
 2. Change the `.env` passwords to secures ones.
 
+## Build
+
+```bash
+docker compose build
+```
+
+Or build and run:
+
+```bash
+docker compose up --build
+```
+
 ## Start the database
 
 ```bash
@@ -57,3 +69,31 @@ docker compose down
         - Password: Check the `.env` `DB_ROOT_PASSWORD`
 
     Keep the rest to default values and click `Save`.
+
+## Create database schema
+
+Linux:
+
+```bash
+./T2_BDD/src/scripts/init_db.sh
+```
+
+Windows:
+
+```sh
+./T2_BDD/src/scripts/init_db.bat
+```
+
+## Populate the database
+
+Linux:
+
+```bash
+./T2_BDD/src/scripts/populate_db.sh
+```
+
+Windows:
+
+```sh
+./T2_BDD/src/scripts/populate_db.bat
+```

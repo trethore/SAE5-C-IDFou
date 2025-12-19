@@ -1,5 +1,5 @@
 -- ====================================================================================
--- USERS (clean_answers.csv)
+-- UTILISATEURS ET PREFERENCES
 -- ====================================================================================
 CREATE TEMP TABLE stg_user (
     created_at TIMESTAMP,
@@ -27,7 +27,7 @@ CREATE TEMP TABLE stg_user (
 
 \copy stg_user (created_at, has_consented, is_listening, frequency, context, "when", how, platform, utility, track_genre, duration, energy, tempo, feeling, is_live, quality, curiosity, age_range, gender, position) FROM 'T1_alternants/src/clean/out/clean_answers.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
 
--- Insert Accounts
+-- Inserer les comptes
 INSERT INTO account (account_id, login, name, email, created_at)
 SELECT 
     account_uuid,
@@ -37,14 +37,14 @@ SELECT
     created_at
 FROM stg_user;
 
--- Insert Users
+-- Inserer les utilisateurs
 INSERT INTO "user" (account_id, pseudo)
 SELECT 
     account_uuid,
     'User_' || substr(account_uuid::text, 1, 8)
 FROM stg_user;
 
--- Insert Preferences
+-- Inserer les preferences
 INSERT INTO preference (
     account_id, age_range, gender, position, has_consented, is_listening,
     frequency, when_listening, duration_pref, energy_pref, tempo_pref,
@@ -60,8 +60,7 @@ SELECT
     how, platform, utility
 FROM stg_user;
 
--- Genre Preference
--- CSV: track_genre = "['pop', 'rap']"
+-- Preference de genre
 WITH user_genres AS (
     SELECT 
         account_uuid,

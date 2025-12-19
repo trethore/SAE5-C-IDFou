@@ -11,7 +11,7 @@ CREATE TEMP TABLE stg_genre (
 
 \copy stg_genre FROM 'T1_analyse_de_donnees/cleaned_data/clean_genres.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
 
--- Insert and Map
+-- Inserer et mapper
 ALTER TABLE stg_genre ADD COLUMN new_uuid UUID DEFAULT uuid_generate_v4();
 
 INSERT INTO genre (genre_id, title, top_level)
@@ -20,7 +20,7 @@ SELECT new_uuid, title, top_level FROM stg_genre;
 INSERT INTO _legacy_id_map (table_name, old_id, new_uuid)
 SELECT 'genre', genre_id, new_uuid FROM stg_genre;
 
--- Update Parent IDs
+-- Mettre a jour les ids parent
 UPDATE genre g
 SET parent_id = m_parent.new_uuid
 FROM stg_genre s

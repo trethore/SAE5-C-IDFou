@@ -1,23 +1,26 @@
-import psycopg2
 import os
+
+import psycopg2
 from dotenv import load_dotenv
+
 
 def get_db_connection():
     """Create database connection."""
-    # DB_HOST = "localhost"
-    # DB_PORT = os.getenv("PGDB_PORT", "5432")
-    # DB_NAME = os.getenv("DB_NAME", "sae5idfou")
-    # DB_USER = os.getenv("DB_USER", "idfou")
-    # DB_PASSWORD = os.getenv("DB_ROOT_PASSWORD")
     load_dotenv()
+
+    DB_HOST = "localhost"
+    DB_PORT = os.getenv("PGDB_PORT", "5432")
+    DB_NAME = os.getenv("DB_NAME", "sae5idfou")
+    DB_USER = os.getenv("DB_USER", "idfou")
+    DB_PASSWORD = os.getenv("DB_ROOT_PASSWORD")
 
     try:
         return psycopg2.connect(
-            host="localhost",
-            port=os.environ["PGDB_PORT"],
-            dbname=os.environ["DB_NAME"],
-            user=os.environ["DB_USER"],
-            password=os.environ["DB_ROOT_PASSWORD"],
+            host=DB_HOST,
+            port=DB_PORT,
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
         )
     except Exception as e:
         print(f"Error connecting to database: {e}")

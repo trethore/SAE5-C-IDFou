@@ -1,9 +1,9 @@
 -- ====================================================================================
--- FUNCTIONS
+-- FONCTIONS
 -- ====================================================================================
 
 /*
-  Helper: fonction pour incrementer album_tracks_count
+  Fonction pour incrementer album_tracks_count
 */
 CREATE OR REPLACE FUNCTION f_inc_album_tracks_count(p_album_id UUID)
 RETURNS void AS $$
@@ -15,7 +15,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Helper: fonction pour decrementer album_tracks_count
+  Fonction pour decrementer album_tracks_count
 */
 CREATE OR REPLACE FUNCTION f_dec_album_tracks_count(p_album_id UUID)
 RETURNS void AS $$
@@ -27,9 +27,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Trigger: après INSERT track -> si album_id NULL créer un album (single) et set NEW.album_id
-           et ensuite incrémenter album_tracks_count.
-  On implémente la création d'album dans un trigger BEFORE INSERT pour pouvoir modifier NEW.album_id.
+  Apres INSERT track -> si album_id NULL creer un album et definir NEW.album_id
+                puis incrementer album_tracks_count.
 */
 CREATE OR REPLACE FUNCTION f_track_before_insert_create_album_if_null()
 RETURNS trigger AS $$
@@ -41,7 +40,7 @@ BEGIN
     RETURNING album_id INTO created_album_id;
 
     NEW.album_id := created_album_id;
-    -- set counters on track
+    -- definir les compteurs
     NEW.track_listens := COALESCE(NEW.track_listens, 0);
     NEW.track_favorites := COALESCE(NEW.track_favorites, 0);
     NEW.track_comments := COALESCE(NEW.track_comments, 0);
@@ -98,7 +97,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Trigger: empecher suppression d'un album s'il contient des tracks
+  On empeche la suppression d'un album s'il contient des pistes
 */
 CREATE OR REPLACE FUNCTION f_prevent_album_delete_if_tracks()
 RETURNS trigger AS $$
@@ -111,7 +110,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Triggers pour likes : lorsque track_user_like est inséré/supprimé, on met à jour track.track_favorites
+  Lorsque track_user_like est insere/supprime, on met a jour track.track_favorites
 */
 CREATE OR REPLACE FUNCTION f_inc_track_favorites_on_like()
 RETURNS trigger AS $$
@@ -130,7 +129,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Triggers pour listens : incremente track.track_listens quand on insère un ecoute
+  Incremente track.track_listens quand on insere une ecoute
 */
 CREATE OR REPLACE FUNCTION f_inc_track_listens_on_listen()
 RETURNS trigger AS $$
@@ -141,7 +140,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Triggers pour commentaires : insert/delete dans track_comment met à jour track.track_comments
+  Insert/delete dans track_comment met a jour track.track_comments
 */
 CREATE OR REPLACE FUNCTION f_inc_track_comments_on_comment()
 RETURNS trigger AS $$
@@ -160,8 +159,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Trigger : créer automatiquement une playlist pour un user s'il n'en a aucune
-  On suppose que création se déclenche lorsqu'un like est ajouté (ex: user like first track).
+  Creer automatiquement une playlist pour un user s'il n'en a aucune.
 */
 CREATE OR REPLACE FUNCTION f_create_playlist_if_none_for_user()
 RETURNS trigger AS $$
@@ -176,7 +174,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Trigger: creation automatique de rank_artist quand un artist est ajoute
+  Creation automatique de rank_artist quand un artiste est ajoute
 */
 CREATE OR REPLACE FUNCTION f_auto_create_rank_artist()
 RETURNS trigger AS $$
@@ -192,7 +190,7 @@ RETURNS void AS $$
 DECLARE fav_sum BIGINT;
 DECLARE com_sum BIGINT;
 BEGIN
-  -- somme des favorites des tracks où artist est main OR feat (on inclut les deux)
+  -- somme des favorites des tracks où artist est main OR feat
   SELECT COALESCE(SUM(t.track_favorites),0) INTO fav_sum
   FROM track t
   WHERE EXISTS (SELECT 1 FROM track_artist_main tam WHERE tam.track_id = t.track_id AND tam.artist_id = p_artist_id)
@@ -211,7 +209,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*
-  Appels triggers: lorsqu'une relation track_artist_main / track_artist_feat change,
+  Lorsqu'une relation track_artist_main / track_artist_feat change,
   ou lorsqu'un like/comment est inséré/supprimé sur un track, on recalculera l'artiste concerné.
 */
 CREATE OR REPLACE FUNCTION f_after_track_artist_main_change()
@@ -230,7 +228,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- même pour featured artists
+-- meme pour artistes invites
 CREATE OR REPLACE FUNCTION f_after_track_artist_feat_change()
 RETURNS trigger AS $$
 BEGIN
@@ -247,7 +245,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- lorsque les likes/comments changent, recalculer compteurs artiste(s) liés au track
+-- lorsque les likes/commentaires changent, recalculer les compteurs des artistes lies a la piste
 CREATE OR REPLACE FUNCTION f_after_like_change_recompute_artists()
 RETURNS trigger AS $$
 DECLARE v_track UUID := NEW.track_id;
@@ -290,7 +288,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ====================================================================================
--- Additional Functions
+-- Fonctions supplementaires
 -- ====================================================================================
 
 CREATE OR REPLACE FUNCTION increment_listen_count(p_account_id UUID, p_track_id UUID)

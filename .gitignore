@@ -211,6 +211,7 @@ __marimo__/
 AGENTS.md
 CLAUDE.md
 .claude/
+.ignore
 
 # T1_analyse_de_donnees
 T1_analyse_de_donnees/data/*.csv
@@ -231,3 +232,4 @@ T1_analyse_de_donnees/out/
 T1_analyse_de_donnees/outputs/
 
 *.DS_Store
+
